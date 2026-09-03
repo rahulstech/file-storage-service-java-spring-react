@@ -1,8 +1,12 @@
 package com.github.rahulstech.filestorage.controller;
 
-import com.github.rahulstech.filestorage.dto.FolderListResponse;
+import com.github.rahulstech.filestorage.dto.CreateFolderRequest;
+import com.github.rahulstech.filestorage.dto.CreateFolderResponse;
+import com.github.rahulstech.filestorage.dto.FolderContentResponse;
 import com.github.rahulstech.filestorage.service.FolderService;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -17,12 +21,23 @@ public class FolderController {
 
 
     @GetMapping("/root/listContent")
-    public FolderListResponse getRootFolderContent() {
+    public FolderContentResponse getRootFolderContent() {
         return folderSrvc.listRoot("USER1");
     }
 
     @GetMapping("/{folderId}/listContent")
-    public FolderListResponse getFolderContent(@PathVariable UUID folderId) {
+    public FolderContentResponse getFolderContent(@PathVariable UUID folderId) {
         return folderSrvc.listFolder(folderId);
+    }
+
+    @PostMapping("/createFolder")
+    public CreateFolderResponse createFolder(@RequestBody CreateFolderRequest request) {
+        return folderSrvc.createFolder("USER1", request.name(), request.parent_folder_id());
+    }
+
+    @DeleteMapping("/{folderId}/removeFolder")
+    public ResponseEntity<@NonNull Void> removeFolder(@PathVariable UUID folderId) {
+        folderSrvc.removeFolder("USER1", folderId);
+        return ResponseEntity.noContent().build();
     }
 }

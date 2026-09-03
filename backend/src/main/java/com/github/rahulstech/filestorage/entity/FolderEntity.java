@@ -29,11 +29,8 @@ public class FolderEntity {
     @Column(nullable = false)
     private String name;
 
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_folder_id")
-    private FolderEntity parentFolder;
+    @Column(name = "parent_folder_id", nullable = false)
+    private UUID parentFolderId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
@@ -42,14 +39,4 @@ public class FolderEntity {
     @Column(name = "updated_at", nullable = false)
     @UpdateTimestamp
     private Instant updatedAt;
-
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @OneToMany(mappedBy = "parentFolder") // parentFolder is the java field name in FolderEntity class
-    private List<FolderEntity> childFolders = new ArrayList<>();
-
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @OneToMany(mappedBy = "folder") // folder is the field name in FieldEntity class
-    private List<FileEntity> files = new ArrayList<>();
 }

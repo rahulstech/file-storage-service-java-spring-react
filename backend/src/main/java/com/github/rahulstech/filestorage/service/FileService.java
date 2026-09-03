@@ -32,8 +32,9 @@ public class FileService  {
 
         // check if the full path exists or not
         // if exists throw error
-        if (fileRepo.existsByUserIdAndFolderIdAndName(userId, request.folder_id(), request.file_name())) {
+        if (fileRepo.existsByFolderIdAndName(request.folder_id(), request.file_name())) {
             // TODO: throw error file already exists
+            throw new RuntimeException("file already exists");
         }
 
         // get folder by id
@@ -54,7 +55,7 @@ public class FileService  {
         FileEntity file = FileEntity.builder()
                 .userId(userId)
                 .name(request.file_name())
-                .folder(folder)
+                .folderId(folder.getId())
                 .mimeType(request.mime_type())
                 .sizeBytes(BigInteger.valueOf(request.size_bytes()))
                 .existsInStorage(false)
@@ -121,14 +122,17 @@ public class FileService  {
         storageSrvc.removeObject(file.getStorageURI());
     }
 
-    public void deleteMultipleFiles(List<UUID> ids) {
+    public void deleteMultipleFilesById(List<UUID> ids) {
         List<FileEntity> files = fileRepo.findAllById(ids);
+        deleteMultipleFiles(files);
+    }
 
-        fileRepo.deleteAllById(ids);
+    public void deleteMultipleFiles(List<FileEntity> files) {
+        fileRepo.deleteAllInBatch(files);
 
-        List<String> storageUris = files.stream().map(FileEntity::getStorageURI).toList();
+        List<String> uri = files.stream().map(FileEntity::getStorageURI).toList();
 
-        storageSrvc.removeMultipleObjects(storageUris);
+        storageSrvc.removeMultipleObjects(uri);
     }
 
     @Nullable

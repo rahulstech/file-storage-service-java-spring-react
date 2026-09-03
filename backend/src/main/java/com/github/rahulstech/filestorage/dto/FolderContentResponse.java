@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-public record FolderListResponse(
+public record FolderContentResponse(
         UUID folder_id,
         String abs_path,
         List<Item> children
@@ -21,6 +21,7 @@ public record FolderListResponse(
             Type type,
             String name,
             @Nullable BigInteger size_bytes,
+            @Nullable String content_url,
             LocalDateTime updated_at
     ) implements Comparable<Item> {
 
@@ -47,6 +48,7 @@ public record FolderListResponse(
                     Type.FILE,
                     file.getName(),
                     file.getSizeBytes(),
+                    file.getCdnURI(),
                     DateTimeUtils.instantToLocalDateTimeAtUTC(file.getUpdatedAt())
             );
         }
@@ -56,6 +58,7 @@ public record FolderListResponse(
                     file.getId().toString(),
                     Type.FOLDER,
                     file.getName(),
+                    null,
                     null,
                     DateTimeUtils.instantToLocalDateTimeAtUTC(file.getUpdatedAt())
             );

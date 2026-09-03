@@ -31,9 +31,8 @@ public class FileEntity {
     @Column(name = "file_name", nullable = false)
     private String name;
 
-    @OneToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "folder_id")
-    private FolderEntity folder;
+    @Column(name = "folder_id", nullable = false)
+    private UUID folderId;
 
     @Column(name = "mime_type", nullable = false)
     private String mimeType;

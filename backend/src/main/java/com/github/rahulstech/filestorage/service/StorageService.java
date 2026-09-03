@@ -5,8 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -96,9 +95,33 @@ public class StorageService {
         this.s3Client.copyObject(cmd);
     }
 
-    public void removeObject(String key) {}
+    public void removeObject(String key) {
+        DeleteObjectRequest cmd = DeleteObjectRequest.builder()
+                .bucket(awsS3Bucket)
+                .key(key)
+                .build();
 
-    public void removeMultipleObjects(List<String> uris) {}
+        s3Client.deleteObject(cmd);
+    }
+
+    public void removeMultipleObjects(List<String> keys) {
+        // TODO: batch delete allows up to 1000 items in a batch, ensure it first
+
+        List<ObjectIdentifier> ids = keys.stream()
+                .map(k -> ObjectIdentifier.builder()
+                        .key(k)
+                        .build())
+                .toList();
+        DeleteObjectsRequest cmd = DeleteObjectsRequest.builder()
+                .bucket(awsS3Bucket)
+                .delete(Delete.builder()
+                        .objects(ids)
+                        .build()
+                )
+                .build();
+
+        s3Client.deleteObjects(cmd);
+    }
 
     public String createTempStorageKey() {
         return createKey(STORAGE_TEMP_KEY_PREFIX, UUID.randomUUID().toString());

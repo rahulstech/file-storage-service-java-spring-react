@@ -27,6 +27,10 @@ public class HttpException extends RuntimeException {
         return new HttpException(HttpStatus.NOT_FOUND, message);
     }
 
+    public static HttpException conflict(String message) {
+        return new HttpException(HttpStatus.CONFLICT, message);
+    }
+
     public static HttpException internalServerError(String message) {
         return new HttpException(HttpStatus.INTERNAL_SERVER_ERROR, message);
     }

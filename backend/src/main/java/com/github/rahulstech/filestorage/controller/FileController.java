@@ -5,6 +5,8 @@ import com.github.rahulstech.filestorage.dto.AddFileResponse;
 import com.github.rahulstech.filestorage.dto.FileResponse;
 import com.github.rahulstech.filestorage.service.FileService;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,5 +27,12 @@ public class FileController {
     @PutMapping("/{fileId}/confirmUpload")
     public FileResponse confirmUpload(@PathVariable UUID fileId) {
         return fileSrvc.confirmFileUpload("USER1", fileId);
+    }
+
+
+    @DeleteMapping("/{fileId}/removeFile")
+    public ResponseEntity<@NonNull Void> removeFile(@PathVariable UUID fileId) {
+        fileSrvc.deleteSingleFile(fileId);
+        return ResponseEntity.noContent().build();
     }
 }
