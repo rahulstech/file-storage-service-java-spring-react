@@ -33,3 +33,18 @@ export interface CreateFolderResponse {
   name: string
   abs_path: string
 }
+
+export interface FolderResponse {
+  folder_id: string
+  name: string
+  abs_path: string
+}
+
+export interface RenameFileRequest {
+  name: string
+}
+
+export interface RenameFolderRequest {
+  name: string
+}
+

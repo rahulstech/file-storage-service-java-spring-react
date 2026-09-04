@@ -6,6 +6,7 @@ import type {
   FileResponse,
   CreateFolderRequest,
   CreateFolderResponse,
+  FolderResponse,
 } from '../models'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -93,5 +94,23 @@ export const api = {
    */
   async removeFolder(folderId: string): Promise<void> {
     await apiClient.delete(`/api/folders/${folderId}/removeFolder`)
+  },
+
+  /**
+   * Renames a file.
+   * Calls PATCH /api/files/{fileId}/renameFile
+   */
+  async renameFile(fileId: string, name: string): Promise<FileResponse> {
+    const response = await apiClient.patch<FileResponse>(`/api/files/${fileId}/renameFile`, { name })
+    return response.data
+  },
+
+  /**
+   * Renames a folder.
+   * Calls PATCH /api/folders/{folderId}/renameFolder
+   */
+  async renameFolder(folderId: string, name: string): Promise<FolderResponse> {
+    const response = await apiClient.patch<FolderResponse>(`/api/folders/${folderId}/renameFolder`, { name })
+    return response.data
   },
 }

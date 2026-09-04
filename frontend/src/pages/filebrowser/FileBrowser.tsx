@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   createColumnHelper,
   flexRender,
@@ -9,10 +9,11 @@ import {
 } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { FolderChildrenType, type FolderData, type FolderChildren } from '../../models'
-import { useFolderContent, useCreateFolder, useRemoveFile, useRemoveFolder } from '../../hooks'
+import { useFolderContent, useCreateFolder, useRemoveFile, useRemoveFolder, useRenameFile, useRenameFolder } from '../../hooks'
 import AlertDialog from '../../components/AlertDialog'
 import CreateFolderDialog from './CreateFolderDialog'
-import ActionPanel from './ActionPanel'
+import RenameDialog from './RenameDialog'
+import ActionPanel, { type Action } from '../../components/ActionPanel'
 import FileUploadProgress from './FileUploadProgress'
 import FileUploader, { type ProgressData } from './FileUploader'
 import { useToast, ToastType } from '../../components/Toast'
@@ -71,6 +72,13 @@ function formatLastModified(updatedAtStr: string): string {
   return `${dayStr}-${monthStr}-${yearStr} ${timeStr}`
 }
 
+function getErrorMessage(err: any, fallbackMessage: string): string {
+  if (!err?.response || err?.code === 'ERR_NETWORK' || err?.message === 'Network Error' || err?.message?.includes('Network')) {
+    return 'Failed to connect to server'
+  }
+  return err?.response?.data?.message || err?.message || fallbackMessage
+}
+
 const columnHelper = createColumnHelper<FolderChildren>()
 
 export function FileBrowser() {
@@ -86,10 +94,23 @@ export function FileBrowser() {
   ])
 
   // Custom TanStack Query hooks
-  const { data: apiFolderData, isLoading, isError, error } = useFolderContent(currentFolderId)
+  const { data: apiFolderData, isLoading, isError } = useFolderContent(currentFolderId)
   const createFolderMutation = useCreateFolder()
   const removeFileMutation = useRemoveFile()
   const removeFolderMutation = useRemoveFolder()
+  const renameFileMutation = useRenameFile()
+  const renameFolderMutation = useRenameFolder()
+
+  // Show Toast notification when failing to connect to server
+  useEffect(() => {
+    if (isError) {
+      showToast({
+        message: 'Failed to connect to server',
+        type: ToastType.DANGER,
+        action: { label: 'Ok' },
+      })
+    }
+  }, [isError, showToast])
 
   // Create Folder State
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState<boolean>(false)
@@ -100,11 +121,12 @@ export function FileBrowser() {
   // TanStack Table Sorting state
   const [sorting, setSorting] = useState<SortingState>([])
 
-  // Selected item state for right detail panel
-  const [selectedItem, setSelectedItem] = useState<FolderChildren | null>(null)
+  // Open item state for right detail panel and right panel actions
+  const [openRightPanelItem, setOpenRightPanelItem] = useState<FolderChildren | null>(null)
 
-  // Item to delete state for confirmation modal
-  const [itemToDelete, setItemToDelete] = useState<FolderChildren | null>(null)
+  // Dialog visibility states for right panel actions
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false)
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState<boolean>(false)
 
   // Folder data returned exclusively by the API
   const folderData: FolderData = useMemo(() => {
@@ -115,6 +137,159 @@ export function FileBrowser() {
       children: [],
     }
   }, [apiFolderData, currentFolderId])
+
+  // Action handler for ActionPanel
+  const handleAction = (actionId: string) => {
+    if (!openRightPanelItem) return
+
+    switch (actionId) {
+      case 'rename':
+        setIsRenameDialogOpen(true)
+        break
+      case 'download':
+        if (openRightPanelItem.content_url) {
+          const link = document.createElement('a')
+          link.href = openRightPanelItem.content_url
+          link.download = openRightPanelItem.name
+          link.target = '_blank'
+          link.rel = 'noopener noreferrer'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        } else {
+          showToast({
+            message: 'Download link is not available.',
+            type: ToastType.DANGER,
+          })
+        }
+        break
+      case 'share':
+        const fullPath =
+          folderData.abs_path === '/' ? `/${openRightPanelItem.name}` : `${folderData.abs_path}/${openRightPanelItem.name}`
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(openRightPanelItem.content_url || fullPath)
+        }
+        showToast({
+          message: `Copied path/link for "${openRightPanelItem.name}"`,
+          type: ToastType.SUCCESS,
+        })
+        break
+      case 'delete':
+        setIsDeleteDialogOpen(true)
+        break
+      default:
+        break
+    }
+  }
+
+  // Construct actions list based on open right panel item type
+  const panelActions: Action[] = useMemo(() => {
+    if (!openRightPanelItem) return []
+
+    const isDeletingPending = removeFileMutation.isPending || removeFolderMutation.isPending || renameFileMutation.isPending || renameFolderMutation.isPending
+    const isFile = openRightPanelItem.type === FolderChildrenType.FILE
+
+    const renameAction: Action = {
+      id: 'rename',
+      label: 'Rename',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+        </svg>
+      ),
+    }
+
+    const downloadAction: Action = {
+      id: 'download',
+      label: 'Download',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+      ),
+    }
+
+    const shareAction: Action = {
+      id: 'share',
+      label: 'Share',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+        </svg>
+      ),
+    }
+
+    const deleteAction: Action = {
+      id: 'delete',
+      label: 'Delete',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+        </svg>
+      ),
+      color: 'danger',
+      enabled: !isDeletingPending,
+    }
+
+    if (isFile) {
+      return [renameAction, downloadAction, shareAction, deleteAction]
+    } else {
+      return [renameAction, shareAction, deleteAction]
+    }
+  }, [openRightPanelItem, removeFileMutation.isPending, removeFolderMutation.isPending, renameFileMutation.isPending, renameFolderMutation.isPending])
+
+  // Handle Rename submit
+  const handleRenameSubmit = async (newName: string) => {
+    if (!openRightPanelItem) return
+    const trimmedName = newName.trim()
+
+    if (!trimmedName) {
+      showToast({
+        message: 'Name is required.',
+        type: ToastType.DANGER,
+        action: { label: 'Ok' },
+      })
+      return
+    }
+
+    if (trimmedName === openRightPanelItem.name) {
+      setIsRenameDialogOpen(false)
+      return
+    }
+
+    const isFolder = openRightPanelItem.type === FolderChildrenType.FOLDER
+    const target = openRightPanelItem
+    setIsRenameDialogOpen(false)
+
+    try {
+      if (isFolder) {
+        await renameFolderMutation.mutateAsync({
+          folderId: target.id,
+          name: trimmedName,
+        })
+      } else {
+        await renameFileMutation.mutateAsync({
+          fileId: target.id,
+          name: trimmedName,
+        })
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
+
+      setOpenRightPanelItem((prev) => (prev ? { ...prev, name: trimmedName } : null))
+
+      showToast({
+        message: `Renamed to "${trimmedName}"`,
+        type: ToastType.SUCCESS,
+      })
+    } catch (err: any) {
+      showToast({
+        message: getErrorMessage(err, `Failed to rename ${isFolder ? 'folder' : 'file'}.`),
+        type: ToastType.DANGER,
+        action: { label: 'Ok' },
+      })
+    }
+  }
 
   // Handle Create Folder submit
   const handleCreateFolderSubmit = async (folderName: string) => {
@@ -140,7 +315,7 @@ export function FileBrowser() {
       })
     } catch (err: any) {
       showToast({
-        message: err?.response?.data?.message || err.message || 'Failed to create folder.',
+        message: getErrorMessage(err, 'Failed to create folder.'),
         type: ToastType.DANGER,
         action: { label: 'Ok' },
       })
@@ -153,7 +328,7 @@ export function FileBrowser() {
   const handleNavigateToFolder = (item: FolderChildren) => {
     setCurrentFolderId(item.id)
     setFolderStack((prev) => [...prev, { id: item.id, label: item.name }])
-    setSelectedItem(null)
+    setOpenRightPanelItem(null)
   }
 
   // TanStack Table columns definition
@@ -221,7 +396,7 @@ export function FileBrowser() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation()
-                  setSelectedItem(item)
+                  setOpenRightPanelItem(item)
                 }}
                 title="More options"
                 className="p-1 rounded-lg text-drive-text-subtle hover:text-drive-text hover:bg-drive-surface-variant transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center"
@@ -287,7 +462,7 @@ export function FileBrowser() {
                     const parent = folderStack[folderStack.length - 2]
                     setCurrentFolderId(parent.id)
                     setFolderStack((prev) => prev.slice(0, -1))
-                    setSelectedItem(null)
+                    setOpenRightPanelItem(null)
                   }
                 }}
                 title="Go back / Up one level"
@@ -308,7 +483,7 @@ export function FileBrowser() {
                       onClick={() => {
                         setCurrentFolderId(crumb.id)
                         setFolderStack((prev) => prev.slice(0, idx + 1))
-                        setSelectedItem(null)
+                        setOpenRightPanelItem(null)
                       }}
                       className={`px-2 py-1 rounded-lg text-sm transition-colors cursor-pointer ${
                         idx === folderStack.length - 1
@@ -336,12 +511,6 @@ export function FileBrowser() {
             </button>
           </div>
 
-          {/* Error Banner */}
-          {isError && (
-            <div className="p-3 m-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
-              Unable to connect to backend server at http://localhost:8080 ({error?.message}). Please verify the server is running.
-            </div>
-          )}
 
           {/* ---------------------------------------------------------- */}
           {/* 2B. BOTTOM SECTION: Folder Content Table (TanStack Table)   */}
@@ -401,13 +570,33 @@ export function FileBrowser() {
         </div>
 
         {/* Right Panel */}
-        <ActionPanel
-          selectedItem={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          absPath={folderData.abs_path}
-          isDeletingPending={removeFileMutation.isPending || removeFolderMutation.isPending}
-          onDeleteClick={(item) => setItemToDelete(item)}
-        />
+        {openRightPanelItem && (
+          <ActionPanel actions={panelActions} onAction={handleAction}>
+            <div className="p-4 border-b border-drive-border flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-drive-text-subtle">
+                  Details
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOpenRightPanelItem(null)}
+                  title="Close panel"
+                  className="p-1 rounded-lg text-drive-text-subtle hover:text-drive-text hover:bg-drive-surface-variant transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-1">
+                <div className="font-bold text-base text-drive-text break-all">{openRightPanelItem.name}</div>
+                <div className="text-xs text-drive-text-subtle font-mono break-all">
+                  {folderData.abs_path === '/' ? `/${openRightPanelItem.name}` : `${folderData.abs_path}/${openRightPanelItem.name}`}
+                </div>
+              </div>
+            </div>
+          </ActionPanel>
+        )}
       </div>
 
       {/* Create Folder Modal */}
@@ -418,23 +607,31 @@ export function FileBrowser() {
         />
       )}
 
+      {/* Rename Modal */}
+      {isRenameDialogOpen && openRightPanelItem && (
+        <RenameDialog
+          initialName={openRightPanelItem.name}
+          isFolder={openRightPanelItem.type === FolderChildrenType.FOLDER}
+          onDismiss={() => setIsRenameDialogOpen(false)}
+          onRenameClick={handleRenameSubmit}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
-      {itemToDelete && (
+      {isDeleteDialogOpen && openRightPanelItem && (
         <AlertDialog
           titleLabel="Confirm Delete"
           yesButtonLabel="No"
           noButtonLabel="Yes"
-          onDismiss={() => setItemToDelete(null)}
-          onClickYes={() => setItemToDelete(null)}
+          onDismiss={() => setIsDeleteDialogOpen(false)}
+          onClickYes={() => setIsDeleteDialogOpen(false)}
           onClickNo={async () => {
-            const target = itemToDelete
-            setItemToDelete(null)
+            const target = openRightPanelItem
+            setIsDeleteDialogOpen(false)
             if (target.type === FolderChildrenType.FILE) {
               try {
                 await removeFileMutation.mutateAsync(target.id)
-                if (selectedItem?.id === target.id) {
-                  setSelectedItem(null)
-                }
+                setOpenRightPanelItem(null)
                 queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
                 showToast({
                   message: `${target.name} deleted`,
@@ -442,7 +639,7 @@ export function FileBrowser() {
                 })
               } catch (err: any) {
                 showToast({
-                  message: err?.response?.data?.message || err.message || 'Failed to delete file.',
+                  message: getErrorMessage(err, 'Failed to delete file.'),
                   type: ToastType.DANGER,
                   action: { label: 'Ok' },
                 })
@@ -450,9 +647,7 @@ export function FileBrowser() {
             } else if (target.type === FolderChildrenType.FOLDER) {
               try {
                 await removeFolderMutation.mutateAsync(target.id)
-                if (selectedItem?.id === target.id) {
-                  setSelectedItem(null)
-                }
+                setOpenRightPanelItem(null)
                 queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
                 showToast({
                   message: `${target.name} delete`,
@@ -460,7 +655,7 @@ export function FileBrowser() {
                 })
               } catch (err: any) {
                 showToast({
-                  message: err?.response?.data?.message || err.message || 'Failed to delete folder.',
+                  message: getErrorMessage(err, 'Failed to delete folder.'),
                   type: ToastType.DANGER,
                   action: { label: 'Ok' },
                 })
@@ -469,7 +664,7 @@ export function FileBrowser() {
           }}
         >
           <p className="text-sm text-drive-text leading-relaxed">
-            Are you sure you want to delete <strong className="font-bold text-drive-text">{itemToDelete.name}</strong> ({folderData.abs_path === '/' ? `/${itemToDelete.name}` : `${folderData.abs_path}/${itemToDelete.name}`})?
+            Are you sure you want to delete <strong className="font-bold text-drive-text">{openRightPanelItem.name}</strong> ({folderData.abs_path === '/' ? `/${openRightPanelItem.name}` : `${folderData.abs_path}/${openRightPanelItem.name}`})?
           </p>
         </AlertDialog>
       )}
