@@ -1,3 +1,6 @@
 export * from './useFolderContent'
 export * from './useAddSingleFile'
 export * from './useConfirmFileUpload'
+export * from './useCreateFolder'
+export * from './useRemoveFile'
+export * from './useRemoveFolder'

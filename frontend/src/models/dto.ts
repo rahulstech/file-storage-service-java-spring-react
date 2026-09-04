@@ -22,3 +22,14 @@ export interface FileResponse {
   cdn_uri: string
   updated_at: string
 }
+
+export interface CreateFolderRequest {
+  parent_folder_id: string | null
+  name: string
+}
+
+export interface CreateFolderResponse {
+  folder_id: string
+  name: string
+  abs_path: string
+}

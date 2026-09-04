@@ -4,6 +4,8 @@ import type {
   AddFileRequest,
   AddFileResponse,
   FileResponse,
+  CreateFolderRequest,
+  CreateFolderResponse,
 } from '../models'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -30,6 +32,15 @@ export const api = {
   },
 
   /**
+   * Creates a new folder.
+   * Calls POST /api/folders/createFolder
+   */
+  async createFolder(request: CreateFolderRequest): Promise<CreateFolderResponse> {
+    const response = await apiClient.post<CreateFolderResponse>('/api/folders/createFolder', request)
+    return response.data
+  },
+
+  /**
    * Initiates adding a single file.
    * Calls POST /api/files/addSingle
    */
@@ -41,10 +52,20 @@ export const api = {
   /**
    * Uploads raw binary file content to the target upload URL.
    */
-  async uploadFileToUrl(uploadUrl: string, file: File): Promise<void> {
+  async uploadFileToUrl(
+    uploadUrl: string,
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<void> {
     await axios.put(uploadUrl, file, {
       headers: {
         'Content-Type': file.type || 'application/octet-stream',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress?.(percent)
+        }
       },
     })
   },
@@ -56,5 +77,21 @@ export const api = {
   async confirmFileUpload(fileId: string): Promise<FileResponse> {
     const response = await apiClient.put<FileResponse>(`/api/files/${fileId}/confirmUpload`)
     return response.data
+  },
+
+  /**
+   * Deletes a file.
+   * Calls DELETE /api/files/{fileId}/removeFile
+   */
+  async removeFile(fileId: string): Promise<void> {
+    await apiClient.delete(`/api/files/${fileId}/removeFile`)
+  },
+
+  /**
+   * Deletes a folder.
+   * Calls DELETE /api/folders/{folderId}/removeFolder
+   */
+  async removeFolder(folderId: string): Promise<void> {
+    await apiClient.delete(`/api/folders/${folderId}/removeFolder`)
   },
 }

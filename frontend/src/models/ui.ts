@@ -1,8 +1,16 @@
+export const FolderChildrenType = {
+  FILE: 'FILE',
+  FOLDER: 'FOLDER',
+} as const
+
+export type FolderChildrenType = (typeof FolderChildrenType)[keyof typeof FolderChildrenType]
+
 export interface FolderChildren {
   id: string
-  type: 'FILE' | 'FOLDER'
+  type: FolderChildrenType
   name: string
   size_bytes: number | null
+  content_url: string | null
   updated_at: string
 }
 
