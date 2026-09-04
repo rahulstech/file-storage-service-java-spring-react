@@ -1,16 +1,17 @@
 package com.github.rahulstech.filestorage.dto;
 
 import com.github.rahulstech.filestorage.entity.FolderEntity;
+import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
 public record FolderResponse(
         UUID folder_id,
-        String name,
-        String abs_path
+        @Nullable UUID parent_folder_id,
+        String name
 ) {
 
-    public static FolderResponse fromEntity(FolderEntity entity, String absPath) {
-        return new FolderResponse(entity.getId(), entity.getName(), absPath);
+    public static FolderResponse fromEntity(FolderEntity entity) {
+        return new FolderResponse(entity.getId(), entity.getParentFolderId(), entity.getName());
     }
 }

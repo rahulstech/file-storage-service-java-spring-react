@@ -85,9 +85,8 @@ public class FolderService {
                 .parentFolderId(parentFolderId)
                 .build();
         FolderEntity savedFolder = folderRepo.saveAndFlush(newFolder);
-        String absPath = buildAbsolutePath(savedFolder);
 
-        return FolderResponse.fromEntity(savedFolder, absPath);
+        return FolderResponse.fromEntity(savedFolder);
     }
 
     public void removeFolder(@NonNull String userId, @NonNull UUID folderId) {
@@ -107,9 +106,8 @@ public class FolderService {
 
         folder.setName(newName);
         FolderEntity savedEntity = folderRepo.saveAndFlush(folder);
-        String absPath = buildAbsolutePath(savedEntity);
 
-        return FolderResponse.fromEntity(savedEntity, absPath);
+        return FolderResponse.fromEntity(savedEntity);
     }
 
     private void removeFolder(@NonNull String userId, @NonNull FolderEntity folder) {
