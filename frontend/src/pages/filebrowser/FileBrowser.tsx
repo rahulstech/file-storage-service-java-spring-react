@@ -9,58 +9,14 @@ import {
 } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { FolderChildrenType, type FolderData, type FolderChildren } from '../../models'
-import { useFolderContent, useAddSingleFile, useConfirmFileUpload, useCreateFolder, useRemoveFile, useRemoveFolder } from '../../hooks'
-import { api } from '../../services/api'
+import { useFolderContent, useCreateFolder, useRemoveFile, useRemoveFolder } from '../../hooks'
 import AlertDialog from '../../components/AlertDialog'
 import CreateFolderDialog from './CreateFolderDialog'
 import ActionPanel from './ActionPanel'
-import FileUploadProgress, { type UploadItem } from './FileUploadProgress'
-
-// Maximum allowed upload file size: 512 MB
-const MAX_FILE_SIZE = 512 * 1024 * 1024
-
-// Allowed MIME type prefixes, exact types, and file extensions
-const ALLOWED_MIME_PREFIXES = ['image/', 'audio/', 'video/', 'text/']
-const ALLOWED_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/rtf',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/csv',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-])
-const ALLOWED_EXTENSIONS = new Set([
-  'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico',
-  'mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac',
-  'mp4', 'webm', 'mkv', 'avi', 'mov', 'flv',
-  'pdf', 'doc', 'docx', 'txt', 'rtf',
-  'xls', 'xlsx', 'csv',
-  'ppt', 'pptx',
-  'txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'ts', 'jsx', 'tsx',
-  'zip', 'rar', '7z', 'tar', 'gz',
-])
-
-function isFileTypeSupported(file: File): boolean {
-  const mime = file.type.toLowerCase()
-  if (mime && (ALLOWED_MIME_PREFIXES.some(prefix => mime.startsWith(prefix)) || ALLOWED_MIME_TYPES.has(mime))) {
-    return true
-  }
-  const ext = file.name.split('.').pop()?.toLowerCase() || ''
-  return ALLOWED_EXTENSIONS.has(ext)
-}
-
-// Utility to format bytes into readable strings
-function formatBytes(bytes: number | null): string {
-  if (bytes === null || bytes === undefined) return ''
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
-}
+import FileUploadProgress from './FileUploadProgress'
+import FileUploader, { type ProgressData } from './FileUploader'
+import { useToast, ToastType } from '../../components/Toast'
+import { formatBytes } from '../../util/helper'
 
 // Utility to format Last Modified date/time according to rules:
 // - Today: Only time in 12-hour format (e.g. "08:15 AM")
@@ -119,6 +75,7 @@ const columnHelper = createColumnHelper<FolderChildren>()
 
 export function FileBrowser() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
 
   // Current folder ID state (default to null for root folder)
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
@@ -130,8 +87,6 @@ export function FileBrowser() {
 
   // Custom TanStack Query hooks
   const { data: apiFolderData, isLoading, isError, error } = useFolderContent(currentFolderId)
-  const addSingleFileMutation = useAddSingleFile()
-  const confirmFileUploadMutation = useConfirmFileUpload()
   const createFolderMutation = useCreateFolder()
   const removeFileMutation = useRemoveFile()
   const removeFolderMutation = useRemoveFolder()
@@ -139,10 +94,8 @@ export function FileBrowser() {
   // Create Folder State
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState<boolean>(false)
 
-  // File Upload State
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState<boolean>(false)
-  const [uploads, setUploads] = useState<UploadItem[]>([])
+  // File Upload Progress State
+  const [uploads, setUploads] = useState<ProgressData[]>([])
 
   // TanStack Table Sorting state
   const [sorting, setSorting] = useState<SortingState>([])
@@ -166,7 +119,11 @@ export function FileBrowser() {
   // Handle Create Folder submit
   const handleCreateFolderSubmit = async (folderName: string) => {
     if (!folderName.trim()) {
-      alert('Folder name is required.')
+      showToast({
+        message: 'Folder name is required.',
+        type: ToastType.DANGER,
+        action: { label: 'Ok' },
+      })
       return
     }
 
@@ -177,94 +134,20 @@ export function FileBrowser() {
       })
       setIsCreateFolderOpen(false)
       queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err.message || 'Failed to create folder.')
-    }
-  }
-
-  // Helper to start file upload and trigger FileUploadProgress
-  const startFileUpload = async (file: File) => {
-    // 1. File Size Validation (Max 512MB)
-    if (file.size > MAX_FILE_SIZE) {
-      alert(`File size (${formatBytes(file.size)}) exceeds the maximum allowed limit of 512MB.`)
-      return
-    }
-
-    // 2. File Type Validation
-    if (!isFileTypeSupported(file)) {
-      alert('Unsupported file format. Please select an image, audio, video, document, spreadsheet, or presentation.')
-      return
-    }
-
-    const uploadId = String(Date.now())
-    const newUploadItem: UploadItem = {
-      id: uploadId,
-      fileName: file.name,
-      fileSize: file.size,
-      progress: 0,
-    }
-
-    setIsUploading(true)
-    setUploads((prev) => [...prev, newUploadItem])
-
-    try {
-      // Step 1: Initiate upload with addSingleFile hook
-      setUploads((prev) => prev.map((u) => (u.id === uploadId ? { ...u, progress: 5 } : u)))
-      const addRes = await addSingleFileMutation.mutateAsync({
-        folder_id: folderData.folder_id,
-        file_name: file.name,
-        size_bytes: file.size,
-        mime_type: file.type || 'application/octet-stream',
+      showToast({
+        message: `Folder "${folderName.trim()}" created successfully`,
+        type: ToastType.SUCCESS,
       })
-
-      if (!addRes?.upload_url || !addRes?.file_id) {
-        throw new Error('Invalid response received from server when starting upload.')
-      }
-
-      const fileId = addRes.file_id
-
-      // Step 2: Upload file binary content via PUT request with progress tracking
-      await api.uploadFileToUrl(addRes.upload_url, file, (percent) => {
-        const calculatedProgress = 5 + Math.round((percent * 90) / 100)
-        setUploads((prev) => prev.map((u) => (u.id === uploadId ? { ...u, progress: calculatedProgress } : u)))
-      })
-
-      // Step 3: Confirm file upload with server
-      setUploads((prev) => prev.map((u) => (u.id === uploadId ? { ...u, progress: 98 } : u)))
-      await confirmFileUploadMutation.mutateAsync(fileId)
-
-      // Set to 100% on completion
-      setUploads((prev) => prev.map((u) => (u.id === uploadId ? { ...u, progress: 100 } : u)))
-
-      // Reset selected file
-      setSelectedFile(null)
-      const fileInput = document.getElementById('file-upload-input') as HTMLInputElement
-      if (fileInput) fileInput.value = ''
-
-      // Invalidate query to refresh folder list
-      queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
-
-      // Remove completed upload item after 1s delay
-      setTimeout(() => {
-        setUploads((prev) => prev.filter((u) => u.id !== uploadId))
-      }, 1000)
     } catch (err: any) {
-      alert(`Upload failed: ${err.message || 'Error occurred during upload'}`)
-      setUploads((prev) => prev.filter((u) => u.id !== uploadId))
-    } finally {
-      setIsUploading(false)
+      showToast({
+        message: err?.response?.data?.message || err.message || 'Failed to create folder.',
+        type: ToastType.DANGER,
+        action: { label: 'Ok' },
+      })
     }
   }
 
-  // Handle single file upload submit via form button
-  const handleUploadSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (selectedFile) {
-      startFileUpload(selectedFile)
-    } else {
-      alert('Please select a file to upload.')
-    }
-  }
+
 
   // Navigation handlers
   const handleNavigateToFolder = (item: FolderChildren) => {
@@ -376,40 +259,12 @@ export function FileBrowser() {
             <h1 className="text-lg font-bold text-drive-text leading-tight">File Storage Service</h1>
           </div>
 
-          {/* File Upload Form */}
-          <form onSubmit={handleUploadSubmit} className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-80">
-              <input
-                id="file-upload-input"
-                type="file"
-                disabled={isUploading}
-                accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ppt,.pptx"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0]
-                    setSelectedFile(file)
-                    startFileUpload(file)
-                  }
-                }}
-                className="w-full text-xs text-drive-text-subtle file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-drive-surface-variant file:text-drive-primary hover:file:bg-drive-hover file:cursor-pointer cursor-pointer border border-drive-border rounded-xl bg-drive-bg p-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <p className="text-[10px] text-drive-text-muted mt-1 px-1">Max file size: 512MB</p>
-            </div>
-            <button
-              type="submit"
-              disabled={!selectedFile || isUploading}
-              className="px-5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm cursor-pointer bg-drive-primary hover:bg-drive-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white active:scale-95 flex items-center gap-2"
-            >
-              {isUploading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Uploading...</span>
-                </>
-              ) : (
-                'Upload'
-              )}
-            </button>
-          </form>
+          {/* File Upload Component */}
+          <FileUploader
+            folderId={currentFolderId}
+            onProgressUpdate={setUploads}
+            onUploadSuccess={() => queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })}
+          />
         </div>
       </header>
 
@@ -581,8 +436,16 @@ export function FileBrowser() {
                   setSelectedItem(null)
                 }
                 queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
+                showToast({
+                  message: `${target.name} deleted`,
+                  type: ToastType.SUCCESS,
+                })
               } catch (err: any) {
-                alert(err?.response?.data?.message || err.message || 'Failed to delete file.')
+                showToast({
+                  message: err?.response?.data?.message || err.message || 'Failed to delete file.',
+                  type: ToastType.DANGER,
+                  action: { label: 'Ok' },
+                })
               }
             } else if (target.type === FolderChildrenType.FOLDER) {
               try {
@@ -591,8 +454,16 @@ export function FileBrowser() {
                   setSelectedItem(null)
                 }
                 queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
+                showToast({
+                  message: `${target.name} delete`,
+                  type: ToastType.SUCCESS,
+                })
               } catch (err: any) {
-                alert(err?.response?.data?.message || err.message || 'Failed to delete folder.')
+                showToast({
+                  message: err?.response?.data?.message || err.message || 'Failed to delete folder.',
+                  type: ToastType.DANGER,
+                  action: { label: 'Ok' },
+                })
               }
             }
           }}

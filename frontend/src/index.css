@@ -18,6 +18,14 @@
   --color-drive-text-subtle: #444746;
   --color-drive-text-muted: #747775;
   --color-drive-sidebar: #f8fafd;
+
+  /* Toast Theme Colors */
+  --color-error-container: #fce8e6;
+  --color-on-error-container: #601410;
+  --color-success-container: #e6f4ea;
+  --color-on-success-container: #137333;
+  --color-inverse-container: #303030;
+  --color-on-inverse-container: #f1f3f4;
 }
 
 :root {
@@ -35,6 +43,14 @@
   --drive-text: #1f1f1f;
   --drive-text-subtle: #444746;
   --drive-text-muted: #747775;
+
+  /* Toast CSS Variables */
+  --error-container: #fce8e6;
+  --on-error-container: #601410;
+  --success-container: #e6f4ea;
+  --on-success-container: #137333;
+  --inverse-container: #303030;
+  --on-inverse-container: #f1f3f4;
 
   color-scheme: light;
   background-color: var(--drive-bg);
