@@ -9,6 +9,7 @@ import com.github.rahulstech.filestorage.error.HttpException;
 import com.github.rahulstech.filestorage.repository.FileRepository;
 import com.github.rahulstech.filestorage.repository.FolderRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
@@ -135,10 +136,32 @@ public class FileService  {
         storageSrvc.removeMultipleObjects(uri);
     }
 
+    public FileResponse renameFile(@NonNull UUID fileId, @NonNull String newName) {
+        FileEntity file = fileRepo.findById(fileId)
+                .orElseThrow(() -> fileNotFound(fileId));
+
+        if (fileRepo.existsByFolderIdAndName(file.getFolderId(), newName)) {
+            throw fileAlreadyExists(newName);
+        }
+
+        file.setName(newName);
+        FileEntity savedEntity = fileRepo.saveAndFlush(file);
+
+        return FileResponse.fromEntity(savedEntity);
+    }
+
     @Nullable
     private FolderEntity getFolderOrNull(@Nullable UUID folderId) {
         if (null == folderId) return null;
         return folderRepo.findById(folderId)
                 .orElseThrow(()-> HttpException.notFound("no folder found for id '"+folderId+"'"));
+    }
+
+    private HttpException fileNotFound(UUID fileId) {
+        return HttpException.notFound("file with id '"+fileId+"' not found");
+    }
+
+    private HttpException fileAlreadyExists(String name) {
+        return HttpException.conflict("file with name '"+name+"' already exists");
     }
 }

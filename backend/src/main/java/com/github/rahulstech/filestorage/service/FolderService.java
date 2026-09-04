@@ -1,6 +1,6 @@
 package com.github.rahulstech.filestorage.service;
 
-import com.github.rahulstech.filestorage.dto.CreateFolderResponse;
+import com.github.rahulstech.filestorage.dto.FolderResponse;
 import com.github.rahulstech.filestorage.dto.FolderContentResponse;
 import com.github.rahulstech.filestorage.entity.FileEntity;
 import com.github.rahulstech.filestorage.entity.FolderEntity;
@@ -13,7 +13,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -67,7 +66,7 @@ public class FolderService {
         );
     }
 
-    public CreateFolderResponse createFolder(@NonNull String userId, @NonNull String name, @Nullable UUID parentFolderId) {
+    public FolderResponse createFolder(@NonNull String userId, @NonNull String name, @Nullable UUID parentFolderId) {
 
         // check parent folder exists
         if (null != parentFolderId && !folderRepo.existsByUserIdAndId(userId, parentFolderId)) {
@@ -76,7 +75,7 @@ public class FolderService {
 
         // check if new folder already exists
         if (folderRepo.existsByUserIdAndNameAndParentFolderId(userId, name, parentFolderId)) {
-            throw HttpException.conflict("folder already exists");
+            throw folderAlreadyExists(name);
         }
 
         // create the folder
@@ -88,11 +87,7 @@ public class FolderService {
         FolderEntity savedFolder = folderRepo.saveAndFlush(newFolder);
         String absPath = buildAbsolutePath(savedFolder);
 
-        return new CreateFolderResponse(
-                savedFolder.getId(),
-                savedFolder.getName(),
-                absPath
-        );
+        return FolderResponse.fromEntity(savedFolder, absPath);
     }
 
     public void removeFolder(@NonNull String userId, @NonNull UUID folderId) {
@@ -100,6 +95,21 @@ public class FolderService {
                 .orElseThrow(()-> folderNotFound(folderId));
 
         removeFolder(userId, folder);
+    }
+
+    public FolderResponse renameFolder(UUID folderId, String newName) {
+        FolderEntity folder = folderRepo.findById(folderId)
+                .orElseThrow(()-> folderNotFound(folderId));
+
+        if (folderRepo.existsByParentFolderIdAndName(folder.getParentFolderId(), newName)) {
+            throw  folderAlreadyExists(newName);
+        }
+
+        folder.setName(newName);
+        FolderEntity savedEntity = folderRepo.saveAndFlush(folder);
+        String absPath = buildAbsolutePath(savedEntity);
+
+        return FolderResponse.fromEntity(savedEntity, absPath);
     }
 
     private void removeFolder(@NonNull String userId, @NonNull FolderEntity folder) {
@@ -119,7 +129,6 @@ public class FolderService {
         // delete the target folder itself
         folderRepo.delete(folder);
     }
-
 
     private String buildAbsolutePath(FolderEntity folder) {
         Deque<String> parts = new ArrayDeque<>();
@@ -150,5 +159,9 @@ public class FolderService {
 
     private HttpException folderNotFound(UUID folderId) {
         return HttpException.notFound("folder with id '"+folderId+"' not found");
+    }
+
+    private HttpException folderAlreadyExists(String name) {
+        return HttpException.conflict("folder with name '"+name+"' already exists");
     }
 }

@@ -18,5 +18,7 @@ public interface FolderRepository extends JpaRepository<@NonNull FolderEntity, @
 
     boolean existsByUserIdAndId(@NonNull String userId, @NonNull UUID id);
 
+    boolean existsByParentFolderIdAndName(@Nullable UUID parentFolderId, @NonNull String name);
+
     boolean existsByUserIdAndNameAndParentFolderId(@NonNull String userId, @NonNull String name, @Nullable UUID parentFolderId);
 }

@@ -1,17 +1,11 @@
 package com.github.rahulstech.filestorage.dto;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.jspecify.annotations.Nullable;
 
-import java.util.UUID;
-
-public record CreateFolderRequest(
-        @Nullable
-        UUID parent_folder_id,
-
-        @NotNull(message = "name is required")
+public record RenameFolderRequest(
+        @NotEmpty(message = "name is required")
         @Size(max = 255, message = "name must be with in 255 characters")
         @Pattern(regexp = "^(?!\\.{1,2}$)[a-zA-Z0-9._-]+(?: [a-zA-Z0-9._-]+)*$", message = "name is not a valid folder name")
         String name

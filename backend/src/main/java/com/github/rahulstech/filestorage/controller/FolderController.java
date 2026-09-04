@@ -1,9 +1,11 @@
 package com.github.rahulstech.filestorage.controller;
 
 import com.github.rahulstech.filestorage.dto.CreateFolderRequest;
-import com.github.rahulstech.filestorage.dto.CreateFolderResponse;
+import com.github.rahulstech.filestorage.dto.FolderResponse;
 import com.github.rahulstech.filestorage.dto.FolderContentResponse;
+import com.github.rahulstech.filestorage.dto.RenameFolderRequest;
 import com.github.rahulstech.filestorage.service.FolderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +33,7 @@ public class FolderController {
     }
 
     @PostMapping("/createFolder")
-    public CreateFolderResponse createFolder(@RequestBody CreateFolderRequest request) {
+    public FolderResponse createFolder(@Valid @RequestBody CreateFolderRequest request) {
         return folderSrvc.createFolder("USER1", request.name(), request.parent_folder_id());
     }
 
@@ -39,5 +41,10 @@ public class FolderController {
     public ResponseEntity<@NonNull Void> removeFolder(@PathVariable UUID folderId) {
         folderSrvc.removeFolder("USER1", folderId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{folderId}/renameFolder")
+    public FolderResponse renameFolder(@PathVariable UUID folderId, @Valid @RequestBody RenameFolderRequest request) {
+        return folderSrvc.renameFolder(folderId, request.name());
     }
 }
