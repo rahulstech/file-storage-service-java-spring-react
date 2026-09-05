@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
 import { api } from '../services/api'
 
-export function useRemoveFile() {
+export function useMoveToTrashFolder() {
   return useMutation<void, Error, string>({
-    mutationFn: (fileId: string) => api.removeFile(fileId),
+    mutationFn: (folderId: string) => api.moveToTrashFolder(folderId),
   })
 }

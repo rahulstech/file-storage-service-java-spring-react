@@ -36,8 +36,8 @@ export interface CreateFolderResponse {
 
 export interface FolderResponse {
   folder_id: string
+  parent_folder_id: string
   name: string
-  abs_path: string
 }
 
 export interface RenameFileRequest {
@@ -46,5 +46,17 @@ export interface RenameFileRequest {
 
 export interface RenameFolderRequest {
   name: string
+}
+
+export interface TrashRequest {
+  id: string
+  type: string
+}
+
+export interface TrashResponse {
+  id: string
+  parent_id: string | null
+  name: string
+  type: string
 }
 

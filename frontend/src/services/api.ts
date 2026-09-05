@@ -7,6 +7,8 @@ import type {
   CreateFolderRequest,
   CreateFolderResponse,
   FolderResponse,
+  TrashRequest,
+  TrashResponse,
 } from '../models'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -81,19 +83,19 @@ export const api = {
   },
 
   /**
-   * Deletes a file.
-   * Calls DELETE /api/files/{fileId}/removeFile
+   * Moves a file to trash.
+   * Calls DELETE /api/files/{fileId}/moveToTrash
    */
-  async removeFile(fileId: string): Promise<void> {
-    await apiClient.delete(`/api/files/${fileId}/removeFile`)
+  async moveToTrashFile(fileId: string): Promise<void> {
+    await apiClient.delete(`/api/files/${fileId}/moveToTrash`)
   },
 
   /**
-   * Deletes a folder.
-   * Calls DELETE /api/folders/{folderId}/removeFolder
+   * Moves a folder to trash.
+   * Calls DELETE /api/folders/{folderId}/moveToTrash
    */
-  async removeFolder(folderId: string): Promise<void> {
-    await apiClient.delete(`/api/folders/${folderId}/removeFolder`)
+  async moveToTrashFolder(folderId: string): Promise<void> {
+    await apiClient.delete(`/api/folders/${folderId}/moveToTrash`)
   },
 
   /**
@@ -112,5 +114,30 @@ export const api = {
   async renameFolder(folderId: string, name: string): Promise<FolderResponse> {
     const response = await apiClient.patch<FolderResponse>(`/api/folders/${folderId}/renameFolder`, { name })
     return response.data
+  },
+
+  /**
+   * Fetches trash content.
+   * Calls GET /api/trash/listContent
+   */
+  async getTrashContent(): Promise<TrashResponse[]> {
+    const response = await apiClient.get<TrashResponse[]>('/api/trash/listContent')
+    return response.data
+  },
+
+  /**
+   * Restores a file or folder from trash.
+   * Calls POST /api/trash/restore
+   */
+  async restoreFromTrash(request: TrashRequest): Promise<void> {
+    await apiClient.post('/api/trash/restore', request)
+  },
+
+  /**
+   * Permanently removes a file or folder from trash.
+   * Calls DELETE /api/trash/remove
+   */
+  async removeFromTrash(request: TrashRequest): Promise<void> {
+    await apiClient.delete('/api/trash/remove', { data: request })
   },
 }

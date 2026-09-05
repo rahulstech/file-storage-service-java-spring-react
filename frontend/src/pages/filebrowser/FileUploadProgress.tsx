@@ -1,4 +1,5 @@
 import React from 'react'
+import { FaXmark } from 'react-icons/fa6'
 
 export interface UploadItem {
   id: string
@@ -70,9 +71,7 @@ export const FileUploadProgress: React.FC<FileUploadProgressProps> = ({
                 title="Cancel upload"
                 className="p-1 rounded-lg text-drive-text-subtle hover:text-drive-text hover:bg-drive-surface-variant transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center shrink-0"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <FaXmark className="w-4 h-4" />
               </button>
             </div>
           </div>

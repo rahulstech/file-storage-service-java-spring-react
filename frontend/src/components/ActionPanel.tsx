@@ -9,24 +9,25 @@ export interface Action {
 }
 
 export interface ActionPanelProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   actions: Action[]
   onAction: (id: string) => void
+  className?: string
 }
 
 export const ActionPanel: React.FC<ActionPanelProps> = ({
   children,
   actions,
   onAction,
+  className,
 }) => {
   return (
-    <aside className="w-full md:w-80 bg-drive-surface rounded-2xl border border-drive-border shadow-xs flex flex-col overflow-hidden shrink-0 transition-all duration-200">
+    <aside className={`w-full md:w-80 bg-drive-surface rounded-2xl border border-drive-border shadow-xs flex flex-col overflow-hidden shrink-0 transition-all duration-200 ${className || ''}`}>
       {/* Panel Header (passed as child) */}
       {children}
 
       {/* Actions List */}
       <div className="p-4 flex flex-col gap-2 flex-1 overflow-y-auto">
-        <span className="text-xs font-semibold uppercase tracking-wider text-drive-text-subtle mb-1">Actions</span>
         {actions.map((action) => {
           const isEnabled = action.enabled ?? true
           const isDanger = action.color === 'danger'

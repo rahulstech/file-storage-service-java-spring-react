@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaXmark } from 'react-icons/fa6';
 
 type AlertDialogProps = {
   onDismiss: () => void;
@@ -38,9 +39,7 @@ export default function AlertDialog({
               onClick={onDismiss}
               className="text-drive-text-subtle hover:text-drive-text p-1 rounded-lg hover:bg-drive-surface-variant transition-colors cursor-pointer"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <FaXmark className="w-5 h-5" />
             </button>
           </div>
         )}

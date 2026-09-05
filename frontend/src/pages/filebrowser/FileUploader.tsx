@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { FaUpload, FaSpinner } from 'react-icons/fa6'
 import { useAddSingleFile, useConfirmFileUpload } from '../../hooks'
 import { api } from '../../services/api'
 import { useToast, ToastType } from '../../components/Toast'
-import { formatBytes } from '../../util/helper'
+import { formatBytes, getErrorMessage } from '../../util/helper'
 
 export interface ProgressData {
   id: string
@@ -152,7 +153,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       }, 1000)
     } catch (err: any) {
       showToast({
-        message: `Upload failed: ${err?.response?.data?.message || err.message || 'Error occurred during upload'}`,
+        message: getErrorMessage(err, 'Upload failed: Error occurred during upload'),
         type: ToastType.DANGER,
         action: { label: 'Ok' },
       })
@@ -201,11 +202,14 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       >
         {isUploading ? (
           <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <FaSpinner className="w-4 h-4 animate-spin" />
             <span>Uploading...</span>
           </>
         ) : (
-          'Upload'
+          <>
+            <FaUpload className="w-4 h-4" />
+            <span>Upload</span>
+          </>
         )}
       </button>
     </form>
