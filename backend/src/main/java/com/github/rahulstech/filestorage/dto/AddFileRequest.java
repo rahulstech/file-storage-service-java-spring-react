@@ -1,19 +1,18 @@
 package com.github.rahulstech.filestorage.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
 public record AddFileRequest(
-        @NotBlank(message = "folder_id can not be blank")
+
         @Nullable
         UUID folder_id,
 
-        @NotBlank(message = "file_name is required")
+        @NotEmpty(message = "file_name is required")
+        @Size(max = 255, message = "file_name must be with in 255 characters")
+        @Pattern(regexp = "^(?!\\.{1,2}$)[a-zA-Z0-9._-]+(?: [a-zA-Z0-9._-]+)*$", message = "file_name is not a valid file name")
         String file_name,
 
         @Min(value = 0)
@@ -23,5 +22,4 @@ public record AddFileRequest(
         @NotBlank(message = "mimeType is required")
         @Size(min = 3, message = "mime_type value not accepted")
         String mime_type
-) {
-}
+) {}

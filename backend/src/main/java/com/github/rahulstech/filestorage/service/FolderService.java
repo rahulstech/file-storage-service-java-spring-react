@@ -7,6 +7,7 @@ import com.github.rahulstech.filestorage.entity.FolderEntity;
 import com.github.rahulstech.filestorage.error.HttpException;
 import com.github.rahulstech.filestorage.repository.FileRepository;
 import com.github.rahulstech.filestorage.repository.FolderRepository;
+import com.github.rahulstech.filestorage.util.Constants;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -51,8 +53,8 @@ public class FolderService {
     }
 
     public FolderContentResponse listRoot(String userId) {
-        List<FolderEntity> dirs = folderRepo.findAllByUserIdAndParentFolderIdIsNull(userId);
-        List<FileEntity> files = fileRepo.findAllByUserIdAndFolderIdIsNull(userId);
+        List<FolderEntity> dirs = folderRepo.findAllByInTrashIsFalseAndUserIdAndParentFolderIdIsNull(userId);
+        List<FileEntity> files = fileRepo.findAllByInTrashIsFalseAndUserIdAndFolderIdIsNull(userId);
 
         List<FolderContentResponse.Item> children = Stream.concat(
                 dirs.stream().map(FolderContentResponse.Item::fromFolderEntity),
@@ -69,12 +71,12 @@ public class FolderService {
     public FolderResponse createFolder(@NonNull String userId, @NonNull String name, @Nullable UUID parentFolderId) {
 
         // check parent folder exists
-        if (null != parentFolderId && !folderRepo.existsByUserIdAndId(userId, parentFolderId)) {
+        if (null != parentFolderId && !folderRepo.existsById(parentFolderId)) {
             throw HttpException.notFound("no folder found for id '"+parentFolderId+"'");
         }
 
         // check if new folder already exists
-        if (folderRepo.existsByUserIdAndNameAndParentFolderId(userId, name, parentFolderId)) {
+        if (folderRepo.existsByParentFolderIdAndName(parentFolderId, name)) {
             throw folderAlreadyExists(name);
         }
 
@@ -89,16 +91,15 @@ public class FolderService {
         return FolderResponse.fromEntity(savedFolder);
     }
 
-    public void removeFolder(@NonNull String userId, @NonNull UUID folderId) {
+    public void removeFolder(@NonNull UUID folderId) {
         FolderEntity folder = folderRepo.findById(folderId)
                 .orElseThrow(()-> folderNotFound(folderId));
 
-        removeFolder(userId, folder);
+        removeFolder(folder);
     }
 
     public FolderResponse renameFolder(UUID folderId, String newName) {
-        FolderEntity folder = folderRepo.findById(folderId)
-                .orElseThrow(()-> folderNotFound(folderId));
+        FolderEntity folder = getFolderByIdOrThrow(folderId);
 
         if (folderRepo.existsByParentFolderIdAndName(folder.getParentFolderId(), newName)) {
             throw  folderAlreadyExists(newName);
@@ -110,7 +111,7 @@ public class FolderService {
         return FolderResponse.fromEntity(savedEntity);
     }
 
-    private void removeFolder(@NonNull String userId, @NonNull FolderEntity folder) {
+    private void removeFolder(@NonNull FolderEntity folder) {
 
         // remove the children files
         List<FileEntity> files = getFilesOfFolder(folder);
@@ -121,11 +122,35 @@ public class FolderService {
         // remove the children folders
         List<FolderEntity> childFolders = getChildFolders(folder);
         for (FolderEntity childFolder : childFolders) {
-            removeFolder(userId, childFolder);
+            removeFolder(childFolder);
         }
 
         // delete the target folder itself
         folderRepo.delete(folder);
+    }
+
+    public void moveToTrash(@NonNull UUID folderId) {
+        FolderEntity folder = getFolderByIdOrThrow(folderId);
+        Instant deleteAt = Instant.now().plusMillis(Constants.DELETE_FROM_TRASH_AFTER_MILLIS);
+
+        folder.setInTrash(true);
+        folder.setDeleteScheduledAt(deleteAt);
+        folderRepo.saveAndFlush(folder);
+    }
+
+    public void restoreFromTrash(UUID folderId) {
+        FolderEntity folder = folderRepo.findById(folderId)
+                .orElseThrow(()->folderNotFound(folderId));
+
+        folder.setInTrash(false);
+        folder.setDeleteScheduledAt(null);
+        folderRepo.saveAndFlush(folder);
+    }
+
+    @NonNull
+    private FolderEntity getFolderByIdOrThrow(@NonNull UUID folderId) {
+        return folderRepo.findById(folderId)
+                .orElseThrow(()-> folderNotFound(folderId));
     }
 
     private String buildAbsolutePath(FolderEntity folder) {
@@ -143,8 +168,7 @@ public class FolderService {
         if (null == folder.getParentFolderId()) {
             return null;
         }
-        return folderRepo.findById(folder.getParentFolderId())
-                .orElseThrow(()-> folderNotFound(folder.getParentFolderId()));
+        return getFolderByIdOrThrow(folder.getParentFolderId());
     }
 
     private List<FolderEntity> getChildFolders(FolderEntity folder) {

@@ -37,9 +37,9 @@ public class FolderController {
         return folderSrvc.createFolder("USER1", request.name(), request.parent_folder_id());
     }
 
-    @DeleteMapping("/{folderId}/removeFolder")
-    public ResponseEntity<@NonNull Void> removeFolder(@PathVariable UUID folderId) {
-        folderSrvc.removeFolder("USER1", folderId);
+    @DeleteMapping("/{folderId}/moveToTrash")
+    public ResponseEntity<@NonNull Void> moveToTrash(@PathVariable UUID folderId) {
+        folderSrvc.moveToTrash(folderId);
         return ResponseEntity.noContent().build();
     }
 

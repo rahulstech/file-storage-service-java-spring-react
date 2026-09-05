@@ -12,13 +12,9 @@ import java.util.UUID;
 @Repository
 public interface FolderRepository extends JpaRepository<@NonNull FolderEntity, @NonNull UUID> {
 
-    List<FolderEntity> findAllByUserIdAndParentFolderIdIsNull(@NonNull String userId);
+    List<FolderEntity> findAllByInTrashIsFalseAndUserIdAndParentFolderIdIsNull(@NonNull String userId);
 
     List<FolderEntity> findAllByParentFolderId(@Nullable UUID parentFolderId);
 
-    boolean existsByUserIdAndId(@NonNull String userId, @NonNull UUID id);
-
     boolean existsByParentFolderIdAndName(@Nullable UUID parentFolderId, @NonNull String name);
-
-    boolean existsByUserIdAndNameAndParentFolderId(@NonNull String userId, @NonNull String name, @Nullable UUID parentFolderId);
 }

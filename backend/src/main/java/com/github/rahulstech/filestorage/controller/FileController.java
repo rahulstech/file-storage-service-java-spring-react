@@ -32,9 +32,9 @@ public class FileController {
     }
 
 
-    @DeleteMapping("/{fileId}/removeFile")
-    public ResponseEntity<@NonNull Void> removeFile(@PathVariable UUID fileId) {
-        fileSrvc.deleteSingleFile(fileId);
+    @DeleteMapping("/{fileId}/moveToTrash")
+    public ResponseEntity<@NonNull Void> moveToTrash(@PathVariable UUID fileId) {
+        fileSrvc.moveToTrash(fileId);
         return ResponseEntity.noContent().build();
     }
 

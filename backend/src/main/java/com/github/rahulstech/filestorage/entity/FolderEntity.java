@@ -2,6 +2,7 @@ package com.github.rahulstech.filestorage.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -31,6 +32,13 @@ public class FolderEntity {
 
     @Column(name = "parent_folder_id", nullable = false)
     private UUID parentFolderId;
+
+    @Column(name = "in_trash", nullable = false)
+    @ColumnDefault("false")
+    private boolean inTrash;
+
+    @Column(name = "delete_scheduled_at")
+    private Instant deleteScheduledAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp

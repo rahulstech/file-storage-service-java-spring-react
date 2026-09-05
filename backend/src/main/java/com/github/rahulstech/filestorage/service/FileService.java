@@ -3,17 +3,20 @@ package com.github.rahulstech.filestorage.service;
 import com.github.rahulstech.filestorage.dto.AddFileRequest;
 import com.github.rahulstech.filestorage.dto.AddFileResponse;
 import com.github.rahulstech.filestorage.dto.FileResponse;
+import com.github.rahulstech.filestorage.dto.TrashResponse;
 import com.github.rahulstech.filestorage.entity.FileEntity;
 import com.github.rahulstech.filestorage.entity.FolderEntity;
 import com.github.rahulstech.filestorage.error.HttpException;
 import com.github.rahulstech.filestorage.repository.FileRepository;
 import com.github.rahulstech.filestorage.repository.FolderRepository;
+import com.github.rahulstech.filestorage.util.Constants;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,13 +32,11 @@ public class FileService  {
 
 
     public AddFileResponse addSingleFile(String userId, AddFileRequest request) {
-        // TODO: verify the parent path and the file name
 
         // check if the full path exists or not
         // if exists throw error
         if (fileRepo.existsByFolderIdAndName(request.folder_id(), request.file_name())) {
-            // TODO: throw error file already exists
-            throw new RuntimeException("file already exists");
+            throw fileAlreadyExists(request.file_name());
         }
 
         // get folder by id
@@ -56,7 +57,7 @@ public class FileService  {
         FileEntity file = FileEntity.builder()
                 .userId(userId)
                 .name(request.file_name())
-                .folderId(folder.getId())
+                .folderId(null == folder ? null : folder.getId())
                 .mimeType(request.mime_type())
                 .sizeBytes(BigInteger.valueOf(request.size_bytes()))
                 .existsInStorage(false)
@@ -73,11 +74,12 @@ public class FileService  {
     }
 
     public FileResponse confirmFileUpload(String userId, UUID fileId) {
-        // get the file meta by id
-        FileEntity file = fileRepo.findById(fileId).orElseThrow(); // TODO: throw not found
+        // get the file by id
+        FileEntity file = fileRepo.findById(fileId)
+                .orElseThrow(()-> fileNotFound(fileId));
 
         if (file.isExistsInStorage()) {
-            // TODO: file already exists throw already exists
+            return FileResponse.fromEntity(file);
         }
 
         // get the tempKey i.e. storageUri
@@ -102,10 +104,6 @@ public class FileService  {
         throw new RuntimeException("not implemented");
     }
 
-    public void renameFile() {}
-
-    public void getChildrenOfParentPath(String parentPath) {}
-
     public void searchDirectChildrenOfParentPathByNameStarts(String parentPath, String keyword) {}
 
     public void deleteSingleFile(UUID id) {
@@ -123,11 +121,6 @@ public class FileService  {
         storageSrvc.removeObject(file.getStorageURI());
     }
 
-    public void deleteMultipleFilesById(List<UUID> ids) {
-        List<FileEntity> files = fileRepo.findAllById(ids);
-        deleteMultipleFiles(files);
-    }
-
     public void deleteMultipleFiles(List<FileEntity> files) {
         fileRepo.deleteAllInBatch(files);
 
@@ -137,8 +130,7 @@ public class FileService  {
     }
 
     public FileResponse renameFile(@NonNull UUID fileId, @NonNull String newName) {
-        FileEntity file = fileRepo.findById(fileId)
-                .orElseThrow(() -> fileNotFound(fileId));
+        FileEntity file = getFileByIdOrThrow(fileId);
 
         if (fileRepo.existsByFolderIdAndName(file.getFolderId(), newName)) {
             throw fileAlreadyExists(newName);
@@ -148,6 +140,30 @@ public class FileService  {
         FileEntity savedEntity = fileRepo.saveAndFlush(file);
 
         return FileResponse.fromEntity(savedEntity);
+    }
+
+    public void moveToTrash(@NonNull UUID fileId) {
+        FileEntity file = getFileByIdOrThrow(fileId);
+        Instant deleteAt = Instant.now().plusMillis(Constants.DELETE_FROM_TRASH_AFTER_MILLIS);
+
+        file.setInTrash(true);
+        file.setDeleteScheduledAt(deleteAt);
+        fileRepo.saveAndFlush(file);
+    }
+
+    public void restoreFromTrash(UUID fileId) {
+        FileEntity file = fileRepo.findById(fileId)
+                .orElseThrow(()->fileNotFound(fileId));
+
+        file.setInTrash(false);
+        file.setDeleteScheduledAt(null);
+        fileRepo.saveAndFlush(file);
+    }
+
+
+    private FileEntity getFileByIdOrThrow(UUID fileId) {
+        return fileRepo.findById(fileId)
+                .orElseThrow(() -> fileNotFound(fileId));
     }
 
     @Nullable

@@ -2,6 +2,7 @@ package com.github.rahulstech.filestorage.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -40,11 +41,19 @@ public class FileEntity {
     @Column(name = "size_bytes", nullable = false)
     private BigInteger sizeBytes;
 
+    @Column(name = "in_trash", nullable = false)
+    @ColumnDefault("false")
+    private boolean inTrash;
+
+    @Column(name = "delete_scheduled_at")
+    private Instant deleteScheduledAt;
+
     @Column(name = "storage_uri")
     private String storageURI;
 
     @Column(name = "exists_in_storage", nullable = false)
-    private boolean existsInStorage = false;
+    @ColumnDefault("false")
+    private boolean existsInStorage;
 
     @Column(name = "cdn_uri")
     private String cdnURI;
