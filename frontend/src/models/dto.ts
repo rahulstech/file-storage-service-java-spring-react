@@ -41,10 +41,12 @@ export interface FolderResponse {
 }
 
 export interface RenameFileRequest {
+  fileId: string,
   name: string
 }
 
 export interface RenameFolderRequest {
+  folderId: string,
   name: string
 }
 
@@ -60,3 +62,19 @@ export interface TrashResponse {
   type: string
 }
 
+export interface RegisterUserRequest {
+  email: string,
+  password: string,
+  name: string
+}
+
+export interface UserLogInRequest {
+  email: string
+  password: string
+}
+
+export interface UserLogInResponse {
+  authToken: string
+  name: string
+  email: string
+}

@@ -97,3 +97,10 @@ export function getErrorMessage(err: any, fallbackMessage: string = 'An error oc
   return err.message || fallbackMessage
 }
 
+// export function isValidEmail(value: string): boolean {
+
+// }
+
+// export function isValidPassword(value: string): boolean {
+
+// }

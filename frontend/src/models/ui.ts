@@ -19,3 +19,8 @@ export interface FolderData {
   abs_path: string
   children: FolderChildren[]
 }
+
+export interface FieldState {
+    value: any;
+    error?: string;
+}

@@ -124,27 +124,13 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
   const showToast = useCallback(
     (
-      optionsOrMessage: ToastOptions | string,
-      typeArg?: ToastType,
-      actionArg?: ToastAction
+      message: string,
+      type: ToastType = ToastType.GENERAL,
+      action?: ToastAction
     ) => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
         timerRef.current = null
-      }
-
-      let message: string
-      let type: ToastType = ToastType.GENERAL
-      let action: ToastAction | undefined = undefined
-
-      if (typeof optionsOrMessage === 'string') {
-        message = optionsOrMessage
-        if (typeArg !== undefined) type = typeArg
-        if (actionArg !== undefined) action = actionArg
-      } else {
-        message = optionsOrMessage.message
-        type = optionsOrMessage.type ?? ToastType.GENERAL
-        action = optionsOrMessage.action
       }
 
       if (action) {

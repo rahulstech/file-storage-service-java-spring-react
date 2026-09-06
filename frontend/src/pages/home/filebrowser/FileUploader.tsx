@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { FaUpload, FaSpinner } from 'react-icons/fa6'
-import { useAddSingleFile, useConfirmFileUpload } from '../../hooks'
-import { api } from '../../services/api'
-import { useToast, ToastType } from '../../components/Toast'
-import { formatBytes, getErrorMessage } from '../../util/helper'
+import { useAddSingleFile, useConfirmFileUpload } from '../../../hooks'
+import { api } from '../../../services/api'
+import { useToast, ToastType } from '../../../components/Toast'
+import { formatBytes, getErrorMessage } from '../../../util/helper'
 
 export interface ProgressData {
   id: string

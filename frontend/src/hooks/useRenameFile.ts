@@ -1,14 +1,12 @@
 import { useMutation } from '@tanstack/react-query'
 import { api } from '../services/api'
-import type { FileResponse } from '../models'
+import type { FileResponse, RenameFileRequest } from '../models'
+import { useAuthContext } from '../contexts/AuthContext'
 
-export interface RenameFileParams {
-  fileId: string
-  name: string
-}
 
 export function useRenameFile() {
-  return useMutation<FileResponse, Error, RenameFileParams>({
-    mutationFn: ({ fileId, name }: RenameFileParams) => api.renameFile(fileId, name),
+  const { user } = useAuthContext()
+  return useMutation<FileResponse, Error, RenameFileRequest>({
+    mutationFn: (request: RenameFileRequest) => api.renameFile(request, user.authToken),
   })
 }

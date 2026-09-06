@@ -8,17 +8,17 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
-import type { TrashResponse } from '../../models'
+import type { TrashResponse } from '../../../models'
 import {
   useTrashContent,
   useRestoreFromTrash,
   useRemoveFromTrash,
-} from '../../hooks'
-import AlertDialog from '../../components/AlertDialog'
-import ActionPanel, { type Action } from '../../components/ActionPanel'
-import FileBrowserActionBar, { type PathSegment } from '../filebrowser/FileBrowserActionBar'
-import { useToast, ToastType } from '../../components/Toast'
-import { getErrorMessage } from '../../util/helper'
+} from '../../../hooks'
+import AlertDialog from '../../../components/AlertDialog'
+import ActionPanel, { type Action } from '../../../components/ActionPanel'
+import FileBrowserActionBar, { type PathSegment } from '../../home/filebrowser/FileBrowserActionBar'
+import { useToast, ToastType } from '../../../components/Toast'
+import { getErrorMessage } from '../../../util/helper'
 import {
   FaFolder,
   FaFileLines,
@@ -48,11 +48,11 @@ export function TrashBrowser() {
   // Show toast on fetch error
   useEffect(() => {
     if (isError) {
-      showToast({
-        message: getErrorMessage(trashError, 'Failed to load trash content'),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(trashError, 'Failed to load trash content'),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }, [isError, trashError, showToast])
 
@@ -94,16 +94,16 @@ export function TrashBrowser() {
       setOpenRightPanelItem(null)
       queryClient.invalidateQueries({ queryKey: ['trashContent'] })
       queryClient.invalidateQueries({ queryKey: ['folderContent'] })
-      showToast({
-        message: `"${item.name}" restored successfully`,
-        type: ToastType.SUCCESS,
-      })
+      showToast(
+        `"${item.name}" restored successfully`,
+        ToastType.SUCCESS,
+      )
     } catch (err: any) {
-      showToast({
-        message: getErrorMessage(err, 'Failed to restore item.'),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(err, 'Failed to restore item.'),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }
 
@@ -120,16 +120,16 @@ export function TrashBrowser() {
       })
       setOpenRightPanelItem(null)
       queryClient.invalidateQueries({ queryKey: ['trashContent'] })
-      showToast({
-        message: `"${item.name}" permanently deleted`,
-        type: ToastType.SUCCESS,
-      })
+      showToast(
+        `"${item.name}" permanently deleted`,
+        ToastType.SUCCESS,
+      )
     } catch (err: any) {
-      showToast({
-        message: getErrorMessage(err, 'Failed to permanently delete item.'),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(err, 'Failed to permanently delete item.'),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }
 
@@ -220,7 +220,7 @@ export function TrashBrowser() {
         {/* Action Bar / Path */}
         <FileBrowserActionBar
           currentPath={pathSegments}
-          onUp={() => {}}
+          onUp={() => { }}
           isUpDisabled={true}
         />
 

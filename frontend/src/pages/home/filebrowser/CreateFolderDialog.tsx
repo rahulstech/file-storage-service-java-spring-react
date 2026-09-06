@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import AlertDialog from '../../components/AlertDialog'
+import AlertDialog from '../../../components/AlertDialog'
 
 interface CreateFolderDialogProps {
   onDismiss: () => void

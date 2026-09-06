@@ -1,14 +1,11 @@
 import { useMutation } from '@tanstack/react-query'
 import { api } from '../services/api'
-import type { FolderResponse } from '../models'
-
-export interface RenameFolderParams {
-  folderId: string
-  name: string
-}
+import type { FolderResponse, RenameFolderRequest } from '../models'
+import { useAuthContext } from '../contexts/AuthContext'
 
 export function useRenameFolder() {
-  return useMutation<FolderResponse, Error, RenameFolderParams>({
-    mutationFn: ({ folderId, name }: RenameFolderParams) => api.renameFolder(folderId, name),
+  const { user } = useAuthContext()
+  return useMutation<FolderResponse, Error, RenameFolderRequest>({
+    mutationFn: (body) => api.renameFolder(body, user.authToken),
   })
 }

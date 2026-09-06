@@ -1,64 +1,22 @@
-import { useState } from 'react'
-import FileBrowser from './pages/filebrowser/FileBrowser'
-import TrashBrowser from './pages/trashbrowser/TrashBrowser'
-import ActionPanel, { type Action } from './components/ActionPanel'
 import { ToastProvider } from './components/Toast'
-import { FaFolder, FaTrashCan } from 'react-icons/fa6'
+import RegisterUserPage from './pages/registeruser/RegisterUserPage'
+import { Route, Routes } from 'react-router-dom'
+import HomePage from './pages/home/HomePage'
+import UserLogInPage from './pages/userlogin/UserLogInPage'
+import { AuthContextProvider } from './contexts/AuthContext'
 
-function AppContent() {
-  const [activeTab, setActiveTab] = useState<'myFiles' | 'trash'>('myFiles')
-
-  const sideActions: Action[] = [
-    {
-      id: 'myFiles',
-      label: 'My Files',
-      icon: <FaFolder className="w-4 h-4" />,
-    },
-    {
-      id: 'trash',
-      label: 'Trash',
-      icon: <FaTrashCan className="w-4 h-4" />,
-    },
-  ]
-
-  const handleSideAction = (actionId: string) => {
-    if (actionId === 'myFiles') {
-      setActiveTab('myFiles')
-    } else if (actionId === 'trash') {
-      setActiveTab('trash')
-    }
-  }
-
-  return (
-    <div className="flex flex-col h-screen bg-drive-bg text-drive-text font-sans overflow-hidden">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-20 bg-drive-surface border-b border-drive-border px-6 py-4 shadow-xs shrink-0">
-        <div className="w-full mx-auto flex items-center justify-between gap-4">
-          <h1 className="text-lg font-bold text-drive-text leading-tight">File Storage Service</h1>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <div className="flex-1 w-full p-4 md:p-6 flex flex-col md:flex-row gap-4 min-h-0 overflow-hidden">
-        {/* Left 15%: Action Panel stretching 100% height */}
-        <div className="w-full md:w-[15%] h-full flex flex-col shrink-0 min-w-45">
-          <ActionPanel actions={sideActions} onAction={handleSideAction} className="h-full w-full md:w-full" />
-        </div>
-
-        {/* Right 85%: Active View Content Area */}
-        <div className="w-full md:w-[85%] h-full flex flex-col flex-1 min-w-0 overflow-hidden">
-          {activeTab === 'myFiles' ? <FileBrowser /> : <TrashBrowser />}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function App() {
   return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
+    <AuthContextProvider>
+      <ToastProvider>
+        <Routes>
+          <Route path="/register" element={<RegisterUserPage />} />
+          <Route path="/login" element={<UserLogInPage />} />
+          <Route path="/" element={<HomePage />} />
+        </Routes>
+      </ToastProvider>
+    </AuthContextProvider> 
   )
 }
 

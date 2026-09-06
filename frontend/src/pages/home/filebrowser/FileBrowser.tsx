@@ -8,17 +8,17 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
-import { FolderChildrenType, type FolderData, type FolderChildren } from '../../models'
-import { useFolderContent, useCreateFolder, useMoveToTrashFile, useMoveToTrashFolder, useRenameFile, useRenameFolder } from '../../hooks'
-import AlertDialog from '../../components/AlertDialog'
+import { FolderChildrenType, type FolderData, type FolderChildren } from '../../../models'
+import { useFolderContent, useCreateFolder, useMoveToTrashFile, useMoveToTrashFolder, useRenameFile, useRenameFolder } from '../../../hooks'
+import AlertDialog from '../../../components/AlertDialog'
 import CreateFolderDialog from './CreateFolderDialog'
 import RenameDialog from './RenameDialog'
-import ActionPanel, { type Action } from '../../components/ActionPanel'
+import ActionPanel, { type Action } from '../../../components/ActionPanel'
 import FileUploadProgress from './FileUploadProgress'
 import FileUploader, { type ProgressData } from './FileUploader'
 import FileBrowserActionBar, { type PathSegment } from './FileBrowserActionBar'
-import { useToast, ToastType } from '../../components/Toast'
-import { formatBytes, formatLastModified, getErrorMessage } from '../../util/helper'
+import { useToast, ToastType } from '../../../components/Toast'
+import { formatBytes, formatLastModified, getErrorMessage } from '../../../util/helper'
 import {
   FaFolderPlus,
   FaFolder,
@@ -113,10 +113,10 @@ export function FileBrowser() {
           link.click()
           document.body.removeChild(link)
         } else {
-          showToast({
-            message: 'Download link is not available.',
-            type: ToastType.DANGER,
-          })
+          showToast(
+            'Download link is not available.',
+            ToastType.DANGER,
+          )
         }
         break
       case 'share':
@@ -125,10 +125,10 @@ export function FileBrowser() {
         if (navigator.clipboard) {
           navigator.clipboard.writeText(openRightPanelItem.content_url || fullPath)
         }
-        showToast({
-          message: `Copied path/link for "${openRightPanelItem.name}"`,
-          type: ToastType.SUCCESS,
-        })
+        showToast(
+          `Copied path/link for "${openRightPanelItem.name}"`,
+          ToastType.SUCCESS,
+        )
         break
       case 'moveToTrash':
         setIsMoveToTrashDialogOpen(true)
@@ -184,11 +184,11 @@ export function FileBrowser() {
     const trimmedName = newName.trim()
 
     if (!trimmedName) {
-      showToast({
-        message: 'Name is required.',
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        'Name is required.',
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
       return
     }
 
@@ -218,27 +218,27 @@ export function FileBrowser() {
 
       setOpenRightPanelItem((prev) => (prev ? { ...prev, name: trimmedName } : null))
 
-      showToast({
-        message: `Renamed to "${trimmedName}"`,
-        type: ToastType.SUCCESS,
-      })
+      showToast(
+        `Renamed to "${trimmedName}"`,
+        ToastType.SUCCESS,
+      )
     } catch (err: any) {
-      showToast({
-        message: getErrorMessage(err, `Failed to rename ${isFolder ? 'folder' : 'file'}.`),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(err, `Failed to rename ${isFolder ? 'folder' : 'file'}.`),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }
 
   // Handle Create Folder submit
   const handleCreateFolderSubmit = async (folderName: string) => {
     if (!folderName.trim()) {
-      showToast({
-        message: 'Folder name is required.',
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        'Folder name is required.',
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
       return
     }
 
@@ -249,16 +249,16 @@ export function FileBrowser() {
       })
       setIsCreateFolderOpen(false)
       queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
-      showToast({
-        message: `Folder "${folderName.trim()}" created successfully`,
-        type: ToastType.SUCCESS,
-      })
+      showToast(
+        `Folder "${folderName.trim()}" created successfully`,
+        ToastType.SUCCESS,
+      )
     } catch (err: any) {
-      showToast({
-        message: getErrorMessage(err, 'Failed to create folder.'),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(err, 'Failed to create folder.'),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }
 
@@ -392,117 +392,117 @@ export function FileBrowser() {
   return (
     <div className="flex-1 w-full flex flex-col md:flex-row gap-4 min-h-0 h-full overflow-hidden">
       <div className="bg-drive-surface rounded-2xl border border-drive-border shadow-xs flex flex-col flex-1 overflow-hidden min-w-0">
-          {/* ---------------------------------------------------------- */}
-          {/* 2A. TOP FIXED SECTION: File Browser Action Bar & Path       */}
-          {/* ---------------------------------------------------------- */}
-          <FileBrowserActionBar
-            currentPath={currentPathSegments}
-            onUp={handleUp}
-            onClickPathSegment={handlePathSegmentClick}
-            isUpDisabled={folderStack.length <= 1}
+        {/* ---------------------------------------------------------- */}
+        {/* 2A. TOP FIXED SECTION: File Browser Action Bar & Path       */}
+        {/* ---------------------------------------------------------- */}
+        <FileBrowserActionBar
+          currentPath={currentPathSegments}
+          onUp={handleUp}
+          onClickPathSegment={handlePathSegmentClick}
+          isUpDisabled={folderStack.length <= 1}
+        >
+          <FileUploader
+            folderId={currentFolderId}
+            onProgressUpdate={setUploads}
+            onUploadSuccess={() => queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })}
+          />
+          <button
+            type="button"
+            onClick={() => setIsCreateFolderOpen(true)}
+            title="Create Folder"
+            aria-label="Create Folder"
+            className="p-1.5 rounded-lg text-drive-text-subtle hover:text-drive-primary hover:bg-drive-surface-variant border border-drive-border transition-colors cursor-pointer flex items-center justify-center"
           >
-            <FileUploader
-              folderId={currentFolderId}
-              onProgressUpdate={setUploads}
-              onUploadSuccess={() => queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })}
-            />
-            <button
-              type="button"
-              onClick={() => setIsCreateFolderOpen(true)}
-              title="Create Folder"
-              aria-label="Create Folder"
-              className="p-1.5 rounded-lg text-drive-text-subtle hover:text-drive-primary hover:bg-drive-surface-variant border border-drive-border transition-colors cursor-pointer flex items-center justify-center"
-            >
-              <FaFolderPlus className="w-5 h-5" />
-            </button>
-          </FileBrowserActionBar>
+            <FaFolderPlus className="w-5 h-5" />
+          </button>
+        </FileBrowserActionBar>
 
 
-          {/* ---------------------------------------------------------- */}
-          {/* 2B. BOTTOM SECTION: Folder Content Table (TanStack Table)   */}
-          {/* ---------------------------------------------------------- */}
-          <div className="flex-1 overflow-auto p-2">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center text-drive-text-muted space-y-3">
-                <FaSpinner className="w-8 h-8 text-drive-primary animate-spin" />
-                <p className="text-sm font-medium">Loading folder content...</p>
-              </div>
-            ) : folderData.children.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center text-drive-text-muted space-y-2">
-                <FaFolderOpen className="text-5xl text-drive-text-muted mb-2" />
-                <p className="text-sm font-medium">This folder is empty.</p>
-                <p className="text-xs text-drive-text-subtle">Use the upload bar above to add files</p>
-              </div>
-            ) : (
-              <table className="w-full text-left text-sm text-drive-text border-collapse">
-                <thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id} className="border-b border-drive-border text-xs text-drive-text-subtle font-semibold select-none">
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          onClick={header.column.getToggleSortingHandler()}
-                          className="pb-3 pt-2 px-4 cursor-pointer hover:text-drive-primary transition-colors"
-                        >
-                          <div className="flex items-center gap-1">
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                            {{
-                              asc: <FaChevronUp className="w-3 h-3 text-drive-primary inline ml-1" />,
-                              desc: <FaChevronDown className="w-3 h-3 text-drive-primary inline ml-1" />,
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody className="divide-y divide-drive-border-subtle">
-                  {table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="hover:bg-drive-hover transition-colors duration-150 group"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="py-3 px-4">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+        {/* ---------------------------------------------------------- */}
+        {/* 2B. BOTTOM SECTION: Folder Content Table (TanStack Table)   */}
+        {/* ---------------------------------------------------------- */}
+        <div className="flex-1 overflow-auto p-2">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center text-drive-text-muted space-y-3">
+              <FaSpinner className="w-8 h-8 text-drive-primary animate-spin" />
+              <p className="text-sm font-medium">Loading folder content...</p>
+            </div>
+          ) : folderData.children.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center text-drive-text-muted space-y-2">
+              <FaFolderOpen className="text-5xl text-drive-text-muted mb-2" />
+              <p className="text-sm font-medium">This folder is empty.</p>
+              <p className="text-xs text-drive-text-subtle">Use the upload bar above to add files</p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm text-drive-text border-collapse">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id} className="border-b border-drive-border text-xs text-drive-text-subtle font-semibold select-none">
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        onClick={header.column.getToggleSortingHandler()}
+                        className="pb-3 pt-2 px-4 cursor-pointer hover:text-drive-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-1">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {{
+                            asc: <FaChevronUp className="w-3 h-3 text-drive-primary inline ml-1" />,
+                            desc: <FaChevronDown className="w-3 h-3 text-drive-primary inline ml-1" />,
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="divide-y divide-drive-border-subtle">
+                {table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-drive-hover transition-colors duration-150 group"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="py-3 px-4">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
+      </div>
 
-        {/* Right Panel */}
-        {openRightPanelItem && (
-          <ActionPanel actions={panelActions} onAction={handleAction}>
-            <div className="p-4 border-b border-drive-border flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-drive-text-subtle">
-                  Details
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setOpenRightPanelItem(null)}
-                  title="Close panel"
-                  className="p-1 rounded-lg text-drive-text-subtle hover:text-drive-text hover:bg-drive-surface-variant transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center"
-                >
-                  <FaXmark className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-1">
-                <div className="font-bold text-base text-drive-text break-all">{openRightPanelItem.name}</div>
-                <div className="text-xs text-drive-text-subtle font-mono break-all">
-                  {folderData.abs_path === '/' ? `/${openRightPanelItem.name}` : `${folderData.abs_path}/${openRightPanelItem.name}`}
-                </div>
+      {/* Right Panel */}
+      {openRightPanelItem && (
+        <ActionPanel actions={panelActions} onAction={handleAction}>
+          <div className="p-4 border-b border-drive-border flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-drive-text-subtle">
+                Details
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpenRightPanelItem(null)}
+                title="Close panel"
+                className="p-1 rounded-lg text-drive-text-subtle hover:text-drive-text hover:bg-drive-surface-variant transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center"
+              >
+                <FaXmark className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-1">
+              <div className="font-bold text-base text-drive-text break-all">{openRightPanelItem.name}</div>
+              <div className="text-xs text-drive-text-subtle font-mono break-all">
+                {folderData.abs_path === '/' ? `/${openRightPanelItem.name}` : `${folderData.abs_path}/${openRightPanelItem.name}`}
               </div>
             </div>
-          </ActionPanel>
-        )}
+          </div>
+        </ActionPanel>
+      )}
 
-        {/* Create Folder Modal */}
+      {/* Create Folder Modal */}
       {isCreateFolderOpen && (
         <CreateFolderDialog
           onDismiss={() => setIsCreateFolderOpen(false)}
@@ -536,32 +536,32 @@ export function FileBrowser() {
                 await moveToTrashFileMutation.mutateAsync(target.id)
                 setOpenRightPanelItem(null)
                 queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
-                showToast({
-                  message: `${target.name} moved to trash`,
-                  type: ToastType.SUCCESS,
-                })
+                showToast(
+                  `${target.name} moved to trash`,
+                  ToastType.SUCCESS,
+                )
               } catch (err: any) {
-                showToast({
-                  message: getErrorMessage(err, 'Failed to move file to trash.'),
-                  type: ToastType.DANGER,
-                  action: { label: 'Ok' },
-                })
+                showToast(
+                  getErrorMessage(err, 'Failed to move file to trash.'),
+                  ToastType.DANGER,
+                  { label: 'Ok' },
+                )
               }
             } else if (target.type === FolderChildrenType.FOLDER) {
               try {
                 await moveToTrashFolderMutation.mutateAsync(target.id)
                 setOpenRightPanelItem(null)
                 queryClient.invalidateQueries({ queryKey: ['folderContent', currentFolderId] })
-                showToast({
-                  message: `${target.name} moved to trash`,
-                  type: ToastType.SUCCESS,
-                })
+                showToast(
+                  `${target.name} moved to trash`,
+                  ToastType.SUCCESS,
+                )
               } catch (err: any) {
-                showToast({
-                  message: getErrorMessage(err, 'Failed to move folder to trash.'),
-                  type: ToastType.DANGER,
-                  action: { label: 'Ok' },
-                })
+                showToast(
+                  getErrorMessage(err, 'Failed to move folder to trash.'),
+                  ToastType.DANGER,
+                  { label: 'Ok' },
+                )
               }
             }
           }}
