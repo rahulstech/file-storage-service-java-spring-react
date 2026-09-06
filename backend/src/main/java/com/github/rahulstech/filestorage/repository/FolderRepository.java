@@ -12,7 +12,7 @@ import java.util.UUID;
 @Repository
 public interface FolderRepository extends JpaRepository<@NonNull FolderEntity, @NonNull UUID> {
 
-    List<FolderEntity> findAllByInTrashIsFalseAndUserIdAndParentFolderIdIsNull(@NonNull String userId);
+    List<FolderEntity> findAllByInTrashIsFalseAndUserIdAndParentFolderIdIsNull(@NonNull UUID userId);
 
     List<FolderEntity> findAllByParentFolderId(@Nullable UUID parentFolderId);
 

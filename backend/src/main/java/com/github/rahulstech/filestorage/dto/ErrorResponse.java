@@ -1,6 +1,6 @@
 package com.github.rahulstech.filestorage.dto;
 
-import org.springframework.http.HttpStatus;
+import lombok.ToString;
 
 import java.util.Map;
 

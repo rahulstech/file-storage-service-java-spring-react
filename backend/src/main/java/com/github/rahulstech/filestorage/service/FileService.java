@@ -3,20 +3,17 @@ package com.github.rahulstech.filestorage.service;
 import com.github.rahulstech.filestorage.dto.AddFileRequest;
 import com.github.rahulstech.filestorage.dto.AddFileResponse;
 import com.github.rahulstech.filestorage.dto.FileResponse;
-import com.github.rahulstech.filestorage.dto.TrashResponse;
 import com.github.rahulstech.filestorage.entity.FileEntity;
 import com.github.rahulstech.filestorage.entity.FolderEntity;
 import com.github.rahulstech.filestorage.error.HttpException;
 import com.github.rahulstech.filestorage.repository.FileRepository;
 import com.github.rahulstech.filestorage.repository.FolderRepository;
-import com.github.rahulstech.filestorage.util.Constants;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +28,7 @@ public class FileService  {
     private final StorageService storageSrvc;
 
 
-    public AddFileResponse addSingleFile(String userId, AddFileRequest request) {
+    public AddFileResponse addSingleFile(UUID userId, AddFileRequest request) {
 
         // check if the full path exists or not
         // if exists throw error
@@ -73,7 +70,7 @@ public class FileService  {
         return new AddFileResponse(uploadUrl, fileId);
     }
 
-    public FileResponse confirmFileUpload(String userId, UUID fileId) {
+    public FileResponse confirmFileUpload(UUID userId, UUID fileId) {
         // get the file by id
         FileEntity file = fileRepo.findById(fileId)
                 .orElseThrow(()-> fileNotFound(fileId));
@@ -86,7 +83,7 @@ public class FileService  {
         String tempKey = file.getStorageURI();
 
         // copy to user's private storage
-        String privateStorageKey = storageSrvc.createUserPrivateStorageKey(userId);
+        String privateStorageKey = storageSrvc.createUserPrivateStorageKey(userId.toString());
         storageSrvc.copyObject(tempKey, privateStorageKey);
 
         // update file in db
@@ -99,12 +96,6 @@ public class FileService  {
 
         return FileResponse.fromEntity(savedFile);
     }
-
-    public List<AddFileResponse> addMultipleFiles(List<AddFileRequest> requests) {
-        throw new RuntimeException("not implemented");
-    }
-
-    public void searchDirectChildrenOfParentPathByNameStarts(String parentPath, String keyword) {}
 
     public void deleteSingleFile(UUID id) {
         // check file exists
@@ -144,10 +135,8 @@ public class FileService  {
 
     public void moveToTrash(@NonNull UUID fileId) {
         FileEntity file = getFileByIdOrThrow(fileId);
-        Instant deleteAt = Instant.now().plusMillis(Constants.DELETE_FROM_TRASH_AFTER_MILLIS);
 
         file.setInTrash(true);
-        file.setDeleteScheduledAt(deleteAt);
         fileRepo.saveAndFlush(file);
     }
 
@@ -156,7 +145,6 @@ public class FileService  {
                 .orElseThrow(()->fileNotFound(fileId));
 
         file.setInTrash(false);
-        file.setDeleteScheduledAt(null);
         fileRepo.saveAndFlush(file);
     }
 

@@ -34,14 +34,15 @@ public class TrashEntity {
     @EmbeddedId
     private TrashItemId id;
 
-    @Column(name = "user_id")
-    private String userId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
+    @Column(nullable = false)
     private String name;
 
     @Column(name = "parent_id")
     private UUID parentId;
 
-    @Column(name = "delete_scheduled_at")
-    private Instant deleteScheduledAt;
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,8 +21,8 @@ public class TrashService {
 
     private final FolderService folderSrvc;
 
-    public List<TrashResponse> getTrashContent(@NonNull String userId) {
-        List<TrashEntity> items = trashRepo.findAllByUserIdOrderByDeleteScheduledAtDesc(userId);
+    public List<TrashResponse> getTrashContent(@NonNull UUID userId) {
+        List<TrashEntity> items = trashRepo.findAllByUserIdOrderByUpdatedAtDesc(userId);
 
         return items.stream().map(TrashResponse::fromEntity).toList();
     }

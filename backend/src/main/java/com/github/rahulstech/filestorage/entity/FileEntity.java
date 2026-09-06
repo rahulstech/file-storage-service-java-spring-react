@@ -27,7 +27,7 @@ public class FileEntity {
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private String userId;
+    private UUID userId;
 
     @Column(name = "file_name", nullable = false)
     private String name;
@@ -44,9 +44,6 @@ public class FileEntity {
     @Column(name = "in_trash", nullable = false)
     @ColumnDefault("false")
     private boolean inTrash;
-
-    @Column(name = "delete_scheduled_at")
-    private Instant deleteScheduledAt;
 
     @Column(name = "storage_uri")
     private String storageURI;

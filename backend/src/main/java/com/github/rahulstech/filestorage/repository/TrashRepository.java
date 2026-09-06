@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface TrashRepository extends JpaRepository<@NonNull TrashEntity, TrashEntity.@NonNull TrashItemId> {
 
-    List<TrashEntity> findAllByUserIdOrderByDeleteScheduledAtDesc(@NonNull String userId);
+    List<TrashEntity> findAllByUserIdOrderByUpdatedAtDesc(@NonNull UUID userId);
 }

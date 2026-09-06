@@ -7,7 +7,6 @@ import com.github.rahulstech.filestorage.entity.FolderEntity;
 import com.github.rahulstech.filestorage.error.HttpException;
 import com.github.rahulstech.filestorage.repository.FileRepository;
 import com.github.rahulstech.filestorage.repository.FolderRepository;
-import com.github.rahulstech.filestorage.util.Constants;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -15,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -52,7 +50,7 @@ public class FolderService {
         );
     }
 
-    public FolderContentResponse listRoot(String userId) {
+    public FolderContentResponse listRoot(UUID userId) {
         List<FolderEntity> dirs = folderRepo.findAllByInTrashIsFalseAndUserIdAndParentFolderIdIsNull(userId);
         List<FileEntity> files = fileRepo.findAllByInTrashIsFalseAndUserIdAndFolderIdIsNull(userId);
 
@@ -68,7 +66,7 @@ public class FolderService {
         );
     }
 
-    public FolderResponse createFolder(@NonNull String userId, @NonNull String name, @Nullable UUID parentFolderId) {
+    public FolderResponse createFolder(@NonNull UUID userId, @NonNull String name, @Nullable UUID parentFolderId) {
 
         // check parent folder exists
         if (null != parentFolderId && !folderRepo.existsById(parentFolderId)) {
@@ -131,10 +129,8 @@ public class FolderService {
 
     public void moveToTrash(@NonNull UUID folderId) {
         FolderEntity folder = getFolderByIdOrThrow(folderId);
-        Instant deleteAt = Instant.now().plusMillis(Constants.DELETE_FROM_TRASH_AFTER_MILLIS);
 
         folder.setInTrash(true);
-        folder.setDeleteScheduledAt(deleteAt);
         folderRepo.saveAndFlush(folder);
     }
 
@@ -143,7 +139,6 @@ public class FolderService {
                 .orElseThrow(()->folderNotFound(folderId));
 
         folder.setInTrash(false);
-        folder.setDeleteScheduledAt(null);
         folderRepo.saveAndFlush(folder);
     }
 

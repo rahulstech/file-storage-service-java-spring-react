@@ -1,5 +1,6 @@
 package com.github.rahulstech.filestorage.controller;
 
+import com.github.rahulstech.filestorage.AuthenticatedUser;
 import com.github.rahulstech.filestorage.dto.CreateFolderRequest;
 import com.github.rahulstech.filestorage.dto.FolderResponse;
 import com.github.rahulstech.filestorage.dto.FolderContentResponse;
@@ -9,13 +10,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/folders")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 public class FolderController {
 
@@ -23,8 +24,8 @@ public class FolderController {
 
 
     @GetMapping("/root/listContent")
-    public FolderContentResponse getRootFolderContent() {
-        return folderSrvc.listRoot("USER1");
+    public FolderContentResponse getRootFolderContent(@AuthenticationPrincipal AuthenticatedUser user) {
+        return folderSrvc.listRoot(user.id());
     }
 
     @GetMapping("/{folderId}/listContent")
@@ -33,8 +34,8 @@ public class FolderController {
     }
 
     @PostMapping("/createFolder")
-    public FolderResponse createFolder(@Valid @RequestBody CreateFolderRequest request) {
-        return folderSrvc.createFolder("USER1", request.name(), request.parent_folder_id());
+    public FolderResponse createFolder(@Valid @RequestBody CreateFolderRequest request, @AuthenticationPrincipal AuthenticatedUser user) {
+        return folderSrvc.createFolder(user.id(), request.name(), request.parent_folder_id());
     }
 
     @DeleteMapping("/{folderId}/moveToTrash")
