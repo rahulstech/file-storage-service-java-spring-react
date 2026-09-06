@@ -6,6 +6,6 @@ import { useAuthContext } from '../contexts/AuthContext'
 export function useRenameFolder() {
   const { user } = useAuthContext()
   return useMutation<FolderResponse, Error, RenameFolderRequest>({
-    mutationFn: (body) => api.renameFolder(body, user.authToken),
+    mutationFn: (body) => api.renameFolder(body, user!!.authToken),
   })
 }

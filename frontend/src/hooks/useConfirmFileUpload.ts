@@ -6,6 +6,6 @@ import { useAuthContext } from '../contexts/AuthContext'
 export function useConfirmFileUpload() {
   const { user } = useAuthContext()
   return useMutation<FileResponse, Error, string>({
-    mutationFn: (fileId: string) => api.confirmFileUpload(fileId, user.authToken),
+    mutationFn: (fileId: string) => api.confirmFileUpload(fileId, user!!.authToken),
   })
 }

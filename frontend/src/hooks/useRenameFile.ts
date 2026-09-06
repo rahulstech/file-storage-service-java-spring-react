@@ -7,6 +7,6 @@ import { useAuthContext } from '../contexts/AuthContext'
 export function useRenameFile() {
   const { user } = useAuthContext()
   return useMutation<FileResponse, Error, RenameFileRequest>({
-    mutationFn: (request: RenameFileRequest) => api.renameFile(request, user.authToken),
+    mutationFn: (request: RenameFileRequest) => api.renameFile(request, user!!.authToken),
   })
 }

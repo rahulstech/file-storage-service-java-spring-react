@@ -7,6 +7,6 @@ export function useTrashContent() {
   const { user } = useAuthContext()
   return useQuery<TrashResponse[], Error>({
     queryKey: ['trashContent'],
-    queryFn: () => api.getTrashContent(user.authToken),
+    queryFn: () => api.getTrashContent(user!!.authToken),
   })
 }

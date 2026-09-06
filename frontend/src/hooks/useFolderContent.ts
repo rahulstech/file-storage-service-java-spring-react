@@ -7,6 +7,6 @@ export function useFolderContent(folderId: string | null) {
   const { user } = useAuthContext()
   return useQuery<FolderData, Error>({
     queryKey: ['folderContent', folderId],
-    queryFn: () => api.getFolderContent(folderId, user.authToken),
+    queryFn: () => api.getFolderContent(folderId, user!!.authToken),
   })
 }

@@ -60,11 +60,11 @@ export function FileBrowser() {
   // Show Toast notification when fetch fails
   useEffect(() => {
     if (isError) {
-      showToast({
-        message: getErrorMessage(folderError, 'Failed to fetch folder content'),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(folderError, 'Failed to fetch folder content'),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }, [isError, folderError, showToast])
 

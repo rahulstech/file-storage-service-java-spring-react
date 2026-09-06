@@ -21,7 +21,7 @@ function FormInput({
     name,
 }: FormInputProp) {
 
-    const handleValueChange = useCallback((e)=> {
+    const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>)=> {
         const value = e.target.value;
         onChange(value);
     }, [onChange])

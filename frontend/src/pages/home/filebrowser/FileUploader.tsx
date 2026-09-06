@@ -82,21 +82,21 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const startFileUpload = async (file: File) => {
     // 1. File Size Validation (Max 512MB)
     if (file.size > MAX_FILE_SIZE) {
-      showToast({
-        message: `File size (${formatBytes(file.size)}) exceeds the maximum allowed limit of 512MB.`,
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        `File size (${formatBytes(file.size)}) exceeds the maximum allowed limit of 512MB.`,
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
       return
     }
 
     // 2. File Type Validation
     if (!isFileTypeSupported(file)) {
-      showToast({
-        message: 'Unsupported file format. Please select an image, audio, video, document, spreadsheet, or presentation.',
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        'Unsupported file format. Please select an image, audio, video, document, spreadsheet, or presentation.',
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
       return
     }
 
@@ -152,11 +152,11 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         setUploads((prev) => prev.filter((u) => u.id !== uploadId))
       }, 1000)
     } catch (err: any) {
-      showToast({
-        message: getErrorMessage(err, 'Upload failed: Error occurred during upload'),
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        getErrorMessage(err, 'Upload failed: Error occurred during upload'),
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
       setUploads((prev) => prev.filter((u) => u.id !== uploadId))
     } finally {
       setIsUploading(false)
@@ -168,11 +168,11 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     if (selectedFile) {
       startFileUpload(selectedFile)
     } else {
-      showToast({
-        message: 'Please select a file to upload.',
-        type: ToastType.DANGER,
-        action: { label: 'Ok' },
-      })
+      showToast(
+        'Please select a file to upload.',
+        ToastType.DANGER,
+        { label: 'Ok' },
+      )
     }
   }
 

@@ -7,6 +7,6 @@ export function useAddSingleFile() {
   const { user } = useAuthContext()
 
   return useMutation<AddFileResponse, Error, AddFileRequest>({
-    mutationFn: (request: AddFileRequest) => api.addSingleFile(request, user.authToken),
+    mutationFn: (request: AddFileRequest) => api.addSingleFile(request, user!!.authToken),
   })
 }

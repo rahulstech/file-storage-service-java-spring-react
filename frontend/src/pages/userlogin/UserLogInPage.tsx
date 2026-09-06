@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { AxiosError } from "axios";
 
 import FormInput from "../../components/FormInput";
@@ -35,9 +35,7 @@ function UserLogInPage() {
         isPending,
     } = useUserLogIn();
 
-    const { isAuthenticated, setUser } = useAuthContext();
-
-    const navigate = useNavigate();
+    const { isAuthenticated } = useAuthContext();
 
     const { showToast } = useToast();
 
@@ -106,26 +104,15 @@ function UserLogInPage() {
             } satisfies UserLogInRequest;
 
             try {
-                const response = await mutateAsync(request);
-
-                setUser(response);
-
+                await mutateAsync(request);
             } catch (error) {
                 // TanStack Query exposes the error through `isError` / `error`.
                 // No additional handling is required here unless you want
                 // field-specific or custom error messages.
             }
         },
-        [
-            pageState,mutateAsync,setUser,
-        ]
+        [pageState,mutateAsync]
     );
-
-
-    if (isAuthenticated) {
-        navigate("/", { replace: true });
-        return null;
-    }
 
     useEffect(()=> {
         if (isError) {
@@ -162,6 +149,10 @@ function UserLogInPage() {
             }
         }
     }, [isError, error, showToast, setPageState])
+
+    if (isAuthenticated) {
+        return <Navigate to='/' replace />
+    }
 
     return (
         <main className="min-h-screen bg-drive-bg flex items-center justify-center px-4 py-8">

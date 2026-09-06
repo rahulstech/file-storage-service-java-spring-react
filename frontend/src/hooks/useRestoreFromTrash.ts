@@ -6,6 +6,6 @@ import { useAuthContext } from '../contexts/AuthContext'
 export function useRestoreFromTrash() {
   const { user } = useAuthContext()
   return useMutation<void, Error, TrashRequest>({
-    mutationFn: (request: TrashRequest) => api.restoreFromTrash(request, user.authToken),
+    mutationFn: (request: TrashRequest) => api.restoreFromTrash(request, user!!.authToken),
   })
 }

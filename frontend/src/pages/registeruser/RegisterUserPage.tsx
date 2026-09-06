@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import FormInput from "../../components/FormInput";
 import { useRegisterUser } from "../../hooks";
 import type { RegisterUserRequest } from "../../models";
@@ -34,8 +34,7 @@ const initialPageState = {
 function RegisterUserPage() {
     const [pageState, setPageState] = useState<PageState>(initialPageState);
     const { mutateAsync, isError, error, isPending } = useRegisterUser();
-    const { isAuthenticated, setUser } = useAuthContext();
-    const navigate = useNavigate()
+    const { isAuthenticated } = useAuthContext();
     const { showToast } = useToast()
 
     const handleChange = useCallback((name: string, value: string) => {
@@ -68,8 +67,7 @@ function RegisterUserPage() {
         if (!pageState.password.value.trim()) {
             errors.password = "Password is required.";
         } else if (!passwordRegex.test(pageState.password.value)) {
-            errors.password =
-                "Password does not meet the required criteria.";
+            errors.password = "Password does not meet the required criteria.";
         }
 
         // Name
@@ -78,8 +76,7 @@ function RegisterUserPage() {
         if (!pageState.name.value.trim()) {
             errors.name = "Name is required.";
         } else if (!nameRegex.test(pageState.name.value)) {
-            errors.name =
-                "Name can contain only letters and numbers.";
+            errors.name = "Name can contain only letters and numbers.";
         }
 
         setPageState((prev) => ({
@@ -116,13 +113,7 @@ function RegisterUserPage() {
 
         await mutateAsync(request);
 
-    },[pageState, mutateAsync, setUser]);
-
-
-    if (isAuthenticated) {
-        navigate('/', { replace: true })
-        return;
-    }
+    },[pageState, mutateAsync]);
 
     useEffect(()=> {
         if (isError) {
@@ -159,6 +150,10 @@ function RegisterUserPage() {
             }
         }
     }, [isError, error, showToast, setPageState])
+
+    if (isAuthenticated) {
+        return <Navigate to='/' replace />
+    }
 
     return (
         <main className="min-h-screen bg-drive-bg flex items-center justify-center px-4 py-8">

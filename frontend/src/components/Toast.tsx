@@ -88,7 +88,7 @@ export interface ToastOptions {
 
 export interface ToastContextType {
   showToast: (
-    optionsOrMessage: ToastOptions | string,
+    message: string,
     type?: ToastType,
     action?: ToastAction
   ) => void

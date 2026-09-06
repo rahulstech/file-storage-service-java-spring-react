@@ -4,12 +4,11 @@ import { FaFolder, FaTrashCan } from "react-icons/fa6";
 import FileBrowser from "./filebrowser/FileBrowser";
 import TrashBrowser from "./trashbrowser/TrashBrowser";
 import { useAuthContext } from "../../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 export default function AppContent() {
   const [activeTab, setActiveTab] = useState<'myFiles' | 'trash'>('myFiles')
   const { isAuthenticated, user, logout } = useAuthContext()
-  const navigate = useNavigate()
 
   const sideActions: Action[] = [
     {
@@ -33,8 +32,7 @@ export default function AppContent() {
   }
 
   if (!isAuthenticated) {
-    navigate('/login', { replace: true })
-    return null
+    return <Navigate to='/login' replace />
   }
 
   return (

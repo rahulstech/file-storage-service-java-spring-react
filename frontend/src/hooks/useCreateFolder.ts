@@ -6,6 +6,6 @@ import { useAuthContext } from '../contexts/AuthContext'
 export function useCreateFolder() {
   const { user } = useAuthContext()
   return useMutation<CreateFolderResponse, Error, CreateFolderRequest>({
-    mutationFn: (request: CreateFolderRequest) => api.createFolder(request, user.authToken),
+    mutationFn: (request: CreateFolderRequest) => api.createFolder(request, user!!.authToken),
   })
 }

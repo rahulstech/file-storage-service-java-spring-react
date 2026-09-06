@@ -5,6 +5,6 @@ import { useAuthContext } from '../contexts/AuthContext'
 export function useMoveToTrashFile() {
   const { user } = useAuthContext()
   return useMutation<void, Error, string>({
-    mutationFn: (fileId: string) => api.moveToTrashFile(fileId, user.authToken),
+    mutationFn: (fileId: string) => api.moveToTrashFile(fileId, user!!.authToken),
   })
 }

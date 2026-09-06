@@ -36,6 +36,8 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
         catch {
             localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         }
+        
+        return null;
     });
     
     const setUser = useCallback((user: AuthUser)=> {
