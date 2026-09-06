@@ -14,8 +14,6 @@ WORKDIR /app
 # use ./gradlew bootJar to create jar file for the application
 COPY ./build/libs/file-storage-*.jar app.jar
 
-COPY ./secrets/ca.pem /secrets/ca.pem
-
 EXPOSE 8080
 
 ENTRYPOINT ["java","-jar","app.jar"]

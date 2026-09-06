@@ -54,6 +54,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable) // since cookie / session based authenticate is not used, therefore csrf is disabled
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
